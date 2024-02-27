@@ -1,7 +1,7 @@
 site_name: My Docs
 theme: 
   name: material
-site_url: www.
+site_url: https://ken0yuan.github.io/mymkdocs/
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
