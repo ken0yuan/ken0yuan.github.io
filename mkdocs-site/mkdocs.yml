@@ -1,6 +1,7 @@
 site_name: My Docs
 theme: 
   name: material
+site_url: www.
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
