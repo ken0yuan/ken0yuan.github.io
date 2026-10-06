@@ -8,3 +8,11 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+
+nav:
+  - 首页: index.md
+  - AI 逻辑笔记: AI-logic-note.md
+  - Pytorch-TorchNPU协作机制: 
+    - nn机制: torchnpu-learn/nn模块.md
+    - nn附录: torchnpu-learn/nn附录.md
+    - nn模块源码: torchnpu-learn/nn模块源码.md
