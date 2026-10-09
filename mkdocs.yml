@@ -14,5 +14,5 @@ nav:
   - Pytorch-TorchNPU协作机制: 
     - nn模块:
       - nn机制: torchnpu-learn/nn模块.md
-      - nn附录: torchnpu-learn/nn附录.md
+      - nn附录: torchnpu-learn/nn模块附录.md
       - nn模块源码: torchnpu-learn/nn模块源码.md
