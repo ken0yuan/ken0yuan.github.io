@@ -8,61 +8,122 @@
 
 源码索引：
 
-- [原笔记中的 NPU 测试入口（当前未定位）](#src-test-origin)
-- [nn.AvgPool2d：完整 class](#src-avgpool-class)
-- [F.avg_pool2d：完整绑定赋值](#src-functional-binding)
-- [avg_pool2d：完整 native YAML 条目](#src-native-schema)
-- [Python 绑定生成器 method_impl：完整函数](#src-python-binding-gen)
-- [Python nn 绑定：完整生成模板](#src-python-binding-template)
-- [ATen C++ API 生成器 ComputeFunction：完整 class](#src-cpp-api-gen)
-- [算子句柄与 call 生成器 ComputeOperators：完整 class](#src-operator-gen)
-- [Schema 注册：完整生成模板](#src-schema-template)
-- [CPU/CUDA 后端注册：完整外层生成模板](#src-backend-template)
-- [后端函数与注册块：完整内层生成模板](#src-dispatch-def-template)
-- [avg_pool2d：完整求导规则条目](#src-derivatives)
-- [VariableType：完整生成模板](#src-variabletype-template)
-- [自动微分 Functions.h：完整生成模板](#src-functions-h-template)
-- [自动微分 Functions.cpp：完整生成模板](#src-functions-cpp-template)
-- [Dispatcher：完整 class（含 OperatorDef、算子列表和名字表）](#src-dispatcher-class)
-- [Dispatcher::findOrRegisterName_：完整函数](#src-find-name)
-- [Dispatcher::findSchemaOrThrow：完整函数](#src-find-schema)
-- [OperatorEntry：完整 class（含 lookup、kernels_、dispatchTable_）](#src-operator-entry)
-- [Dispatcher::call：完整函数](#src-dispatcher-call)
-- [DispatchKeyExtractor：完整 struct](#src-key-extractor)
-- [MultiDispatchKeySet：完整 struct](#src-multi-key)
-- [multi_dispatch_key_set：完整函数](#src-multi-key-fn)
-- [computeDispatchKeySet：完整函数](#src-compute-key)
-- [KernelFunction：完整 class](#src-kernel-class)
-- [Dispatcher::registerImpl：完整函数](#src-register-impl)
-- [OperatorEntry::registerKernel：完整函数](#src-register-kernel)
-- [OperatorEntry::updateDispatchTable_：完整函数](#src-update-table)
-- [getRuntimeDispatchKeySet：完整函数](#src-runtime-keys)
-- [OperatorEntry::updateDispatchTableEntry_：完整函数](#src-update-entry)
-- [OperatorEntry::computeDispatchTableEntry：完整函数](#src-compute-entry)
-- [OperatorEntry::computeDispatchTableEntryWithDebug：完整函数](#src-compute-entry-debug)
-- [OperatorEntry::getKernelForDispatchKey：完整函数](#src-get-kernel)
-- [NPU wrapper 生成器 gen_unstructured：完整函数](#src-npu-wrapper-gen)
-- [NPU 注册文件生成器 gen_dispatcher_registrations：完整函数](#src-npu-register-gen)
-- [TORCH_LIBRARY_IMPL：完整宏](#src-library-macro)
-- [_TORCH_LIBRARY_IMPL：完整宏](#src-library-macro-expand)
-- [TorchLibraryInit：完整 class（普通初始化分支）](#src-library-init)
-- [TORCH_FN_TYPE：完整宏](#src-torch-fn-type)
-- [TORCH_FN：完整宏](#src-torch-fn)
-- [CompileTimeFunctionPointer：完整 struct](#src-compile-pointer)
-- [Library::impl：完整成员函数](#src-library-impl)
-- [CppFunction：完整 class](#src-cppfunction)
-- [KernelFunction::makeFromUnboxedFunction：完整函数](#src-make-function)
-- [make_unique_base：完整函数](#src-make-unique)
-- [WrapFunctionIntoFunctor：完整类型选择 struct](#src-wrap-type)
-- [WrapFunctionIntoFunctor_：完整主模板 class](#src-wrap-primary)
-- [WrapFunctionIntoFunctor_：完整偏特化 class](#src-wrap-function)
-- [KernelFunction::makeFromUnboxedFunctor：完整函数](#src-make-functor)
-- [KernelFunction：完整四参数构造函数](#src-kernel-ctor)
-- [Library::_impl：完整函数](#src-library-_impl)
-- [KernelFunction::call：完整函数](#src-kernel-call)
-- [callUnboxedKernelFunction：完整函数](#src-call-unboxed)
-- [wrap_kernel_functor_unboxed_：完整偏特化 struct（不接收 keyset 的 kernel）](#src-unboxed-adapter)
-- [BoxedKernel::getFunctor：完整函数](#src-boxed-get-functor)
+- [nn 模块源码](#nn-模块源码)
+  - [src-test-origin](#src-test-origin)
+  - [src-avgpool-class](#src-avgpool-class)
+  - [src-functional-binding](#src-functional-binding)
+  - [src-native-schema](#src-native-schema)
+  - [src-python-binding-gen](#src-python-binding-gen)
+  - [src-python-binding-template](#src-python-binding-template)
+  - [src-cpp-api-gen](#src-cpp-api-gen)
+  - [src-operator-gen](#src-operator-gen)
+  - [src-schema-template](#src-schema-template)
+  - [src-backend-template](#src-backend-template)
+  - [src-dispatch-def-template](#src-dispatch-def-template)
+  - [src-derivatives](#src-derivatives)
+  - [src-variabletype-template](#src-variabletype-template)
+  - [src-functions-h-template](#src-functions-h-template)
+  - [src-functions-cpp-template](#src-functions-cpp-template)
+  - [src-dispatcher-class](#src-dispatcher-class)
+  - [src-find-name](#src-find-name)
+  - [src-find-schema](#src-find-schema)
+  - [src-operator-entry](#src-operator-entry)
+  - [src-dispatcher-call](#src-dispatcher-call)
+  - [src-key-extractor](#src-key-extractor)
+  - [src-multi-key](#src-multi-key)
+  - [src-multi-key-fn](#src-multi-key-fn)
+  - [src-compute-key](#src-compute-key)
+  - [src-kernel-class](#src-kernel-class)
+  - [src-register-impl](#src-register-impl)
+  - [src-register-kernel](#src-register-kernel)
+  - [src-update-table](#src-update-table)
+  - [src-runtime-keys](#src-runtime-keys)
+  - [src-update-entry](#src-update-entry)
+  - [src-compute-entry](#src-compute-entry)
+  - [src-compute-entry-debug](#src-compute-entry-debug)
+  - [src-get-kernel](#src-get-kernel)
+  - [src-npu-wrapper-gen](#src-npu-wrapper-gen)
+  - [src-npu-wrapper-body](#src-npu-wrapper-body)
+  - [src-npu-register-gen](#src-npu-register-gen)
+  - [src-library-macro](#src-library-macro)
+  - [src-library-macro-expand](#src-library-macro-expand)
+  - [src-library-init](#src-library-init)
+  - [src-torch-fn-type](#src-torch-fn-type)
+  - [src-torch-fn](#src-torch-fn)
+  - [src-compile-pointer](#src-compile-pointer)
+  - [src-library-impl](#src-library-impl)
+  - [src-cppfunction](#src-cppfunction)
+  - [src-make-function](#src-make-function)
+  - [src-make-unique](#src-make-unique)
+  - [src-wrap-type](#src-wrap-type)
+  - [src-wrap-primary](#src-wrap-primary)
+  - [src-wrap-function](#src-wrap-function)
+  - [src-make-functor](#src-make-functor)
+  - [src-kernel-ctor](#src-kernel-ctor)
+  - [src-library-\_impl](#src-library-_impl)
+  - [src-kernel-call](#src-kernel-call)
+  - [src-call-unboxed](#src-call-unboxed)
+  - [src-unboxed-adapter](#src-unboxed-adapter)
+  - [src-boxed-get-functor](#src-boxed-get-functor)
+  - [src-cann-provenance](#src-cann-provenance)
+  - [src-pool-plugin-config](#src-pool-plugin-config)
+  - [src-plugin-config-gen](#src-plugin-config-gen)
+  - [src-plugin-interface-gen](#src-plugin-interface-gen)
+  - [src-opinterface-avg-pool2d](#src-opinterface-avg-pool2d)
+  - [src-plugin-return-gen](#src-plugin-return-gen)
+  - [src-pool-opapi](#src-pool-opapi)
+  - [src-pool-generalize](#src-pool-generalize)
+  - [src-pool-output-size](#src-pool-output-size)
+  - [src-pool-output-allocation](#src-pool-output-allocation)
+  - [src-pool-compatibility](#src-pool-compatibility)
+  - [src-pool-opapi-helper](#src-pool-opapi-helper)
+  - [src-pool-aclop](#src-pool-aclop)
+  - [src-pool-aclop-check](#src-pool-aclop-check)
+  - [src-pool-aclop-padding](#src-pool-aclop-padding)
+  - [src-pool-aclop-helper](#src-pool-aclop-helper)
+  - [src-pool-aclop-allocation](#src-pool-aclop-allocation)
+  - [src-aclop-command-run](#src-aclop-command-run)
+  - [src-aclop-impl-run](#src-aclop-impl-run)
+  - [src-aclop-queued-exec](#src-aclop-queued-exec)
+  - [src-opapi-symbol](#src-opapi-symbol)
+  - [src-exec-npu-select](#src-exec-npu-select)
+  - [src-exec-npu-v1](#src-exec-npu-v1)
+  - [src-exec-npu-v2](#src-exec-npu-v2)
+  - [src-opapi-convert-pack](#src-opapi-convert-pack)
+  - [src-opapi-convert-tensor](#src-opapi-convert-tensor)
+  - [src-opapi-function-call](#src-opapi-function-call)
+  - [src-opapi-workspace](#src-opapi-workspace)
+  - [src-opapi-run](#src-opapi-run)
+  - [src-opapi-submit-types](#src-opapi-submit-types)
+  - [src-opapi-queue-copy](#src-opapi-queue-copy)
+  - [src-opapi-queue-dispatch](#src-opapi-queue-dispatch)
+  - [src-opapi-queue-exec](#src-opapi-queue-exec)
+  - [src-execution-snapshot](#src-execution-snapshot)
+  - [src-queue-en-current](#src-queue-en-current)
+  - [src-queue-enqueue](#src-queue-enqueue)
+  - [src-queue-write](#src-queue-write)
+  - [src-queue-callback-manager](#src-queue-callback-manager)
+  - [src-queue-callback-registration](#src-queue-callback-registration)
+  - [src-stream-queue-initialization](#src-stream-queue-initialization)
+  - [src-queue-init](#src-queue-init)
+  - [src-queue-consume](#src-queue-consume)
+  - [src-queue-dequeue](#src-queue-dequeue)
+  - [src-queue-read](#src-queue-read)
+  - [src-aclop-export](#src-aclop-export)
+  - [src-command-constructor](#src-command-constructor)
+  - [src-opapi-inner-run](#src-opapi-inner-run)
+  - [src-opapi-hit-cache](#src-opapi-hit-cache)
+  - [src-typed-handle-return](#src-typed-handle-return)
+  - [src-python-dispatch-return](#src-python-dispatch-return)
+  - [src-python-wrap-tensor](#src-python-wrap-tensor)
+  - [src-python-tensor-object](#src-python-tensor-object)
+  - [src-opapi-library-evidence](#src-opapi-library-evidence)
+  - [src-add-docstr](#src-add-docstr)
+  - [src-python-method-entry](#src-python-method-entry)
+  - [src-python-tensor-unpack](#src-python-tensor-unpack)
+  - [src-dispatch-table-index](#src-dispatch-table-index)
+
+- [JIT 模式的设置与查询](#src-jit-options)
 
 ## src-test-origin
 
@@ -2923,6 +2984,54 @@ namespace {{
             assert_never(self.target)
 ````
 
+## src-npu-wrapper-body
+
+**本次找到的 wrapper_NPU__avg_pool2d：完整函数**
+
+以下函数由用户从生成代码中提供，匿名命名空间外壳根据用户补充说明添加，仅整理缩进。未提供该生成文件的具体路径与行号；生成机制见上面的 `src-npu-wrapper-gen`。
+
+````cpp
+// 来源：TN/torch_npu/csrc/aten/RegisterNPU.cpp
+// 起始行：20174
+namespace {
+
+at::Tensor wrapper_NPU__avg_pool2d(
+    const at::Tensor & self,
+    at::IntArrayRef kernel_size,
+    at::IntArrayRef stride,
+    at::IntArrayRef padding,
+    bool ceil_mode,
+    bool count_include_pad,
+    ::std::optional<int64_t> divisor_override) {
+  std::optional<Device> common_device = std::nullopt;
+  (void)common_device; // Suppress unused variable warning
+  c10::impl::check_and_update_common_device(
+      common_device, self, "wrapper_NPU__avg_pool2d", "self");
+  if (c10_npu::get_npu_data_unsafe_flag()) {
+    c10_npu::check_npu_tensor_is_safe(self);
+  }
+  const OptionalDeviceGuard device_guard(device_of(self));
+#ifndef BUILD_LIBTORCH
+  torch_npu::profiler::NPURecordFunction guard;
+#endif
+  if (C10_UNLIKELY(at_npu::native::env::CheckOpHookEnable())) {
+    at_npu::native::OpHook::GetInstance().PreHook(
+        "avg_pool2d", self, kernel_size, stride, padding,
+        ceil_mode, count_include_pad, divisor_override);
+    at::Tensor res = op_plugin::avg_pool2d(
+        self, kernel_size, stride, padding,
+        ceil_mode, count_include_pad, divisor_override);
+    at_npu::native::OpHook::GetInstance().PostHook(res);
+    return res;
+  }
+  return op_plugin::avg_pool2d(
+      self, kernel_size, stride, padding,
+      ceil_mode, count_include_pad, divisor_override);
+}
+
+} // namespace
+````
+
 ## src-npu-register-gen
 
 **NPU 注册文件生成器 gen_dispatcher_registrations：完整函数**
@@ -3767,5 +3876,3603 @@ struct wrap_kernel_functor_unboxed_<
 
 inline OperatorKernel* BoxedKernel::getFunctor() const {
   return functor_.get();
+}
+````
+
+## src-cann-provenance
+
+**Part5：wrapper → CANN 的来源与验证范围**
+
+本节于 2026-10-08 追加。源码来自本地 torch_npu checkout `9cd8d1f148` 及其 `third_party/op-plugin` checkout `f96de66eb84f6e67fb5755ac5c51907b3635ec0b`，下方保留实际路径与行号。生成文件未取得时，保留完整生成器；正文的简化函数另行标注为示意。
+
+用户提供的参考目录：`/Users/yuanchengyao/workspace/pytorch-torchnpu测试学习/learn-PU1-mechanism/nn`。重点参考 `source_evidence.md` 的 L4–L7、`runtime_evidence.md` 的实验 2–4，以及 `PYTORCH_NPU_CALL_CHAIN_TUTORIAL.md` 的 1.4–1.8。
+
+参考目录记载的远端实验环境为 Python 3.10.12、torch / torch_npu 2.15.0a0、Ascend 910B4；checkout 为 PyTorch `bf54051becd`、torch_npu `42d8b33`，运行日期为 2026-09-24。它与本地源码版本不同，不能将远端生成文件的行号直接当成本地行号，也不能把参考目录的 Runtime Confirmed 标记视为本次重新实测。
+
+其中的错误摘录为：
+
+```text
+avg_pool2d_out_npu_nocheck_opapi:
+TN/third_party/op-plugin/op_plugin/ops/opapi/AvgPool2dKernelNpuOpApi.cpp:40
+NPU function error: call aclnnAvgPool2d failed, error code is 161002
+```
+
+该记录支持当时走到了 op-api / ACLNN 错误检查路径，但没有附完整设备调用栈。当前宏在第一段和第二段失败时均可能生成同样的 `call aclnnAvgPool2d failed` 前缀，不能只依据这行定位具体阶段，更不能据此证明实际设备 kernel 已启动或完成。
+
+本次核对到的边界是 CANN 主机侧 API；没有重新执行 NPU 测试，也没有从动态库符号推出内部的 tiling 或设备 kernel 调用链。接口协议另与 [CANN 9.1.0 aclnnAvgPool2d 文档](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/910/API/aolapi/context/ops-nn/aclnnAvgPool2d.md)核对；这不代表远端实验使用的就是 CANN 9.1.0。
+
+## src-pool-plugin-config
+
+**avg_pool2d 的完整 op-plugin 配置条目**
+
+````yaml
+# 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/config/op_plugin_functions.yaml
+# 起始行：1276
+
+  - func: avg_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, bool ceil_mode=False, bool count_include_pad=True, int? divisor_override=None) -> Tensor
+    acl_op: all_version
+    op_api: all_version
+````
+
+## src-plugin-config-gen
+
+**按版本整理 impl_ns 的配置生成器：完整 main**
+
+````python
+# 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/torchnpugen/gen_op_plugin_functions.py
+# 起始行：10
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--version', type=str, default=None, help='pytorch version')
+    parser.add_argument('-o', '--output_dir', help='output directory')
+    parser.add_argument('-s', '--source_yaml', type=str, default=None, help='source yaml')
+    args = parser.parse_args()
+    pytorch_version = args.version.split('.')
+    version = f"v{pytorch_version[0]}.{pytorch_version[1]}"
+    output_dir = args.output_dir
+    source_yaml = args.source_yaml
+
+    source_yaml_path = os.path.realpath(source_yaml)
+    PathManager.check_directory_path_readable(source_yaml_path)
+    with open(source_yaml_path, 'r') as f:
+        old_yaml = yaml.safe_load(f)
+
+    new_yaml = {'official': [], 'custom': [], 'symint': [], 'tocpu': [], 'unsupported': [], 'quant': [], 'autograd': []}
+
+    string = ['official', 'custom', 'symint', 'quant', 'autograd']
+    all_version = old_yaml['all_version']
+
+    # parse 'official', 'custom', 'symint', 'quant', 'autograd'
+    for key in string:
+
+        # if apply aclnn extension：
+        if os.getenv('ACLNN_EXTENSION_SWITCH'):
+            items = old_yaml.get(key)
+            if items is None:
+                continue
+
+        for item in old_yaml[key]:
+            item.pop('gen_opapi', None)
+
+            acl_op_sup_ver = get_version(item.get('acl_op', None), all_version)
+            op_api_sup_ver = get_version(item.get('op_api', None), all_version)
+            dvm_sup_ver = get_version(item.get('dvm', None), all_version)
+            sparse = get_version(item.get('sparse', None), all_version)
+            internal_format_opapi = get_version(item.get('internal_format_opapi', None), all_version)
+            item.update({'acl_op':acl_op_sup_ver})
+            item.update({'op_api':op_api_sup_ver})
+            item.update({'dvm':dvm_sup_ver})
+            item.update({'sparse':sparse})
+            item.update({'internal_format_opapi':internal_format_opapi})
+
+            if version in (acl_op_sup_ver + op_api_sup_ver + sparse):
+                new_item = item.copy()
+                impl_ns = []
+                for i in ['acl_op', 'op_api']:
+                    if version in item.get(i, ''):
+                        impl_ns.append(i)
+                    new_item.pop(i, None)
+                if version in item.get('dvm', ''):
+                    impl_ns.append('dvm')
+                new_item.pop('dvm', None)
+                if len(acl_op_sup_ver) > 0 or len(op_api_sup_ver) > 0:
+                    new_item['impl_ns'] = ', '.join(impl_ns)
+
+                if version in item.get('sparse', ''):
+                    new_item['sparse'] = 'op_api'
+                else:
+                    new_item.pop('sparse', None)
+                if version in get_version(item.get('exposed', None), all_version):
+                    new_item['exposed'] = True
+                else:
+                    new_item.pop('exposed', None)
+                if version in item.get('internal_format_opapi', ''):
+                    new_item['internal_format_opapi'] = True
+                else:
+                    new_item.pop('internal_format_opapi', None)
+
+                new_yaml.get(key).append(new_item)
+
+    # parse 'tocpu' and 'unsupported', only v1.11 and v2.0 supported
+    if version in ['v1.11', 'v2.0']:
+        for key in ['tocpu', 'unsupported']:
+            for func in old_yaml[key]:
+                if version in func['version']:
+                    new_yaml.get(key).append(func['func'])
+    elif 'tocpu' in new_yaml and 'unsupported' in new_yaml:
+        del new_yaml['tocpu'], new_yaml['unsupported']
+
+    if version in ['v1.11', 'v2.0', 'v2.1'] and 'quant' in new_yaml:
+        del new_yaml['quant']
+
+    # save to new yaml
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    modes = stat.S_IWUSR | stat.S_IRUSR
+    if os.path.islink(output_dir):
+        raise RuntimeError(f'output_dir: Invalid path is a soft chain')
+    with os.fdopen(os.open(f'{output_dir}/op_plugin_functions.yaml', flags, modes), 'w') as f:
+        yaml.dump(data=new_yaml, stream=f, width=2000, sort_keys=False)
+````
+
+## src-plugin-interface-gen
+
+**OpInterface 文件生成器：完整 main**
+
+初次整理时未取得生成的 OpInterface_*.cpp；用户后来提供的 avg_pool2d 生成函数见 [src-opinterface-avg-pool2d](#src-opinterface-avg-pool2d)。这里保留真实生成器，它把统一入口放入 op_plugin 命名空间，把具体实现声明分别放入 op_api、acl_op 等命名空间。
+
+````python
+# 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/torchnpugen/gen_op_backend.py
+# 起始行：8
+
+def main() -> None:
+
+    parser = argparse.ArgumentParser(description='Generate backend stub files')
+    parser.add_argument(
+        '--to_cpu', type=str, default="TRUE", help='move op which npu does not support to cpu')
+    parser.add_argument(
+        '-s',
+        '--source_yaml',
+        help='path to source yaml file containing operator external definitions')
+    parser.add_argument(
+        '--deprecate_yaml',
+        help='path to yaml file containing functions which is deprecated.')
+    parser.add_argument(
+        '-o', '--output_dir', help='output directory')
+    parser.add_argument(
+        '--dry_run', type=bool, default=False, help='output directory')
+    parser.add_argument(
+        '--version', type=str, default=None, help='pytorch version')
+    parser.add_argument(
+        '--impl_path', type=str, default=None, help='path to the source C++ file containing kernel definitions')
+    options = parser.parse_args()
+
+    source_yaml_path = os.path.realpath(options.source_yaml)
+    deprecate_yaml_path = os.path.realpath(options.deprecate_yaml)
+    PathManager.check_directory_path_readable(source_yaml_path)
+    PathManager.check_directory_path_readable(deprecate_yaml_path)
+    backend_declarations, dispatch_registrations_body = parse_native_yaml(source_yaml_path, deprecate_yaml_path)
+
+    env_aclnn_extension_switch = os.getenv('ACLNN_EXTENSION_SWITCH')
+    if env_aclnn_extension_switch:
+        # Use absolute path relative to current script for templates
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        template_dir_make_file_manager = os.path.join(script_dir, "templates")
+    else:
+        template_dir_make_file_manager = "torchnpugen/templates"
+
+    def make_file_manager(install_dir: str) -> FileManager:
+        return FileManager(
+            install_dir=install_dir, template_dir=template_dir_make_file_manager, dry_run=False
+        )
+
+    fm = make_file_manager(options.output_dir)
+
+    pytorch_version = os.environ.get('PYTORCH_VERSION').split('.')
+    torch_dir = f"v{pytorch_version[0]}r{pytorch_version[1]}"
+
+    all_functions = sorted(set(concatMap(lambda f: [f],
+                                         set(v for sublist in backend_declarations.values() for v in sublist))))
+
+    fm.write_with_template(
+        "OpInterface.h",
+        "Interface.h",
+        lambda: {
+            "torch_dir": torch_dir,
+            "namespace": "op_plugin",
+            "declarations": all_functions,
+        },
+    )
+
+    header_files = {
+        "op_api": "OpApiInterface.h",
+        "acl_op": "AclOpsInterface.h",
+        "sparse": "SparseOpsInterface.h",
+        "lazy_fusion": "DvmOpsInterface.h",
+    }
+    for op_type, file_name in header_files.items():
+        fm.write_with_template(
+            file_name,
+            "Interface.h",
+            lambda: {
+                "torch_dir": torch_dir,
+                "namespace": op_type,
+                "declarations": backend_declarations[op_type],
+            },
+        )
+
+    dvm_includes = (
+        '#include "op_plugin/DvmOpsInterface.h"\n'
+        '#include "op_plugin/ops/dvm/lazy_fusion_kernel.h"\n'
+    )
+    # When ACLNN_EXTENSION_SWITCH is set, use simplified includes (no FormatHelper/op_log) for OpInterface.cpp
+    if env_aclnn_extension_switch:
+        includes_block = f'''#include "torch_npu/csrc/framework/interface/EnvVariables.h"
+// #include "torch_npu/csrc/framework/FormatHelper.h"
+#include "torch_npu/csrc/core/npu/npu_log.h"
+#include "torch_npu/csrc/core/npu/NpuVariables.h"
+#include "torch_npu/csrc/core/npu/NPUException.h"
+#include "op_plugin/AclOpsInterface.h"
+#include "op_plugin/OpApiInterface.h"
+#include "op_plugin/SparseOpsInterface.h"
+{dvm_includes}// #include "op_plugin/utils/op_log.h"
+#include "op_plugin/OpInterface.h"
+'''
+    else:
+        includes_block = f'''#include "torch_npu/csrc/framework/interface/EnvVariables.h"
+#include "torch_npu/csrc/framework/FormatHelper.h"
+#include "torch_npu/csrc/core/npu/npu_log.h"
+#include "torch_npu/csrc/core/npu/NpuVariables.h"
+#include "torch_npu/csrc/core/npu/NPUException.h"
+#include "op_plugin/AclOpsInterface.h"
+#include "op_plugin/OpApiInterface.h"
+#include "op_plugin/SparseOpsInterface.h"
+{dvm_includes}#include "op_plugin/utils/op_log.h"
+#include "op_plugin/OpInterface.h"
+'''
+
+    fm.write_sharded(
+        "OpInterface.cpp",
+        dispatch_registrations_body,
+        key_fn=lambda decl: decl,
+        base_env={
+            "namespace": "op_plugin",
+            "includes_block": includes_block,
+        },
+        env_callable=lambda decl: {"declarations": [decl]},
+        num_shards=32,  # Empirical value; reduces compilation time from ~150s to ~20s+ per file after sharding
+        sharded_keys={"declarations"},
+    )
+````
+
+## src-opinterface-avg-pool2d
+
+**op_plugin::avg_pool2d：生成文件中的完整函数**
+
+来源为用户提供的生成文件；其第 30 行打开 `namespace op_plugin {`，下方函数位于该命名空间中。这里保留完整函数，仅去除行尾空白。该文件未提供构建版本，不能直接将其归属于前面记录的本地 checkout。
+
+````cpp
+// 来源：TN/torch_npu/third_party/op-plugin/op_plugin/OpInterface_19.cpp
+// 起始行：582
+
+at::Tensor avg_pool2d(const at::Tensor & self, at::IntArrayRef kernel_size, at::IntArrayRef stride, at::IntArrayRef padding, bool ceil_mode, bool count_include_pad, c10::optional<int64_t> divisor_override){
+
+    bool is_jit_disable = at_npu::native::env::CheckJitDisable();
+    bool self_base_format = at_npu::native::FormatHelper::IsOpInputBaseFormat(self);
+
+    OP_EXEC_LOG(avg_pool2d, "exec aten", self, kernel_size, stride, padding, ceil_mode, count_include_pad, divisor_override);
+    ASCEND_LOGI("avg_pool2d exec with jit compile: %d, self is internal format: %d",
+                !is_jit_disable, !self_base_format);
+    if (is_jit_disable && self_base_format) {
+
+        return op_api::avg_pool2d(self, kernel_size, stride, padding, ceil_mode, count_include_pad, divisor_override);
+    } else {
+        if (c10_npu::IsAclnnOnly()) {
+            TORCH_CHECK(false,
+                "Current device only support aclnn operator, and current operator avg_pool2d do not support internal format.",
+                PTA_ERROR(ErrCode::NOT_SUPPORT));
+        }
+        return acl_op::avg_pool2d(self, kernel_size, stride, padding, ceil_mode, count_include_pad, divisor_override);
+    }
+}
+````
+
+## src-plugin-return-gen
+
+**OpInterface 函数体生成器：完整 gen_return**
+
+````python
+# 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/torchnpugen/gen.py
+# 起始行：252
+
+def gen_return(
+    f: NativeFunction,
+    deprecated_dict: Dict,
+) -> List[Optional[str]]:
+    ret = []
+    with native_function_manager(f):
+        has_symint = False
+        op_name_with_overload = str(f.func.name)
+        op_name = str(f.func.name.name)
+        global SYMINT_SET
+        if f.func.is_out_fn():
+            op_name += "_out"
+        if str(f.func.name) in SYMINT_SET:
+            op_name += "_symint"
+            has_symint = True
+
+        sig = NativeSignature(f.func, prefix='', symint=has_symint)
+        args_exprs_str = ', '.join(a.name for a in sig.arguments())
+
+        impl_name = f.impl_name
+        if not f.impl_name:
+            impl_name = op_name
+
+        deprecated_warn = ""
+        if op_name_with_overload in deprecated_dict.keys():
+            deprecated_func = f'torch_npu.{str(f.func.name.name)}'
+            deprecated_replace = deprecated_dict[op_name_with_overload]
+            if deprecated_replace is not None:
+                deprecated_warn += f'TORCH_WARN_ONCE("{deprecated_func} is deprecated and will be removed in future version. \
+Use {deprecated_replace} instead.");'
+            else:
+                deprecated_warn += f'TORCH_WARN_ONCE("{deprecated_func} is deprecated and will be removed in future version.");'
+
+        format_check = []
+        format_display = []
+        place_holder = []
+        format_for_args = []
+        inputs_list = ""
+        is_aclnn_only = "c10_npu::IsAclnnOnly()"
+        for a in sig.arguments():
+            argument = a.argument
+            if isinstance(a.argument, SelfArgument):
+                argument = a.argument.argument
+            if not isinstance(a.argument, TensorOptionsArguments) and argument.type.is_tensor_like():
+                format_for_args.append(
+                    f"    bool {a.name}_base_format = at_npu::native::FormatHelper::IsOpInputBaseFormat({a.name});\n")
+                format_check.append(f" && {a.name}_base_format")
+                format_display.append(f", !{a.name}_base_format")
+                place_holder.append(f", {a.name} is internal format: %d")
+            inputs_list += f"{a.name}, "
+        inputs_list = inputs_list[:-2]
+
+        aclnn_extension = os.getenv('ACLNN_EXTENSION_SWITCH') == 'TRUE'
+
+        dvm_call = ""
+        if "dvm" in f.impl_ns:
+            if len(f.func.returns) == 0:
+                dvm_call = f"""if (lazy_fusion::IsEnabled()) {{
+            lazy_fusion::{impl_name}({args_exprs_str});
+            return;
+        }}"""
+            else:
+                dvm_call = f"""if (lazy_fusion::IsEnabled()) {{
+            return lazy_fusion::{impl_name}({args_exprs_str});
+        }}"""
+
+        if "op_api" in f.impl_ns and "acl_op" in f.impl_ns:
+            if aclnn_extension:
+                ret.append(f"""{sig.defn(name=op_name)}{{
+    {deprecated_warn}
+    return op_api::{impl_name}({args_exprs_str});
+}}
+""")
+            elif not f.internal_format_opapi:
+                ret.append(f"""{sig.defn(name=op_name)}{{
+    {deprecated_warn}
+    bool is_jit_disable = at_npu::native::env::CheckJitDisable();
+{"".join(format_for_args)}
+    OP_EXEC_LOG({impl_name}, "exec aten", {inputs_list});
+    ASCEND_LOGI("{impl_name} exec with jit compile: %d{"".join(place_holder)}",
+                !is_jit_disable{"".join(format_display)});
+    if (is_jit_disable{"".join(format_check)}) {{
+        {dvm_call}
+        return op_api::{impl_name}({args_exprs_str});
+    }} else {{
+        if ({is_aclnn_only}) {{
+            TORCH_CHECK(false,
+                "Current device only support aclnn operator, and current operator {impl_name} do not support internal format.",
+                PTA_ERROR(ErrCode::NOT_SUPPORT));
+        }}
+        return acl_op::{impl_name}({args_exprs_str});
+    }}
+}}
+""")
+            else:
+                ret.append(f"""{sig.defn(name=op_name)}{{
+    {deprecated_warn}
+    bool is_jit_disable = at_npu::native::env::CheckJitDisable();
+    OP_EXEC_LOG({impl_name}, "exec aten", {inputs_list});
+    ASCEND_LOGI("{impl_name} exec with jit compile: %d", !is_jit_disable);
+    if (is_jit_disable) {{
+        {dvm_call}
+        return op_api::{impl_name}({args_exprs_str});
+    }} else {{
+        return acl_op::{impl_name}({args_exprs_str});
+    }}
+}}
+""")
+        elif "op_api" in f.impl_ns:
+            ns = f.impl_ns[0]
+            if aclnn_extension:
+                ret.append(f"""{sig.defn(name=op_name)}{{
+    {deprecated_warn}
+    return {ns}::{impl_name}({args_exprs_str});
+}}
+""")
+            elif f.internal_format_opapi:
+                ret.append(f"""{sig.defn(name=op_name)}{{
+    {deprecated_warn}
+    OP_EXEC_LOG({impl_name}, "exec aten", {inputs_list});
+    {dvm_call}
+    return {ns}::{impl_name}({args_exprs_str});
+}}
+""")
+            else:
+                ret.append(f"""{sig.defn(name=op_name)}{{
+    {deprecated_warn}
+{"".join(format_for_args)}
+    OP_EXEC_LOG({impl_name}, "exec aten", {inputs_list});
+    if ({("".join(format_check)).replace(" && ", " || !").replace(" || ", "", 1)}) {{
+        TORCH_CHECK(false,
+            "Current operator {impl_name} do not support internal format. ",
+            PTA_ERROR(ErrCode::NOT_SUPPORT));
+    }}
+    {dvm_call}
+    return {ns}::{impl_name}({args_exprs_str});
+}}
+""")
+        elif "acl_op" in f.impl_ns:
+            ns = f.impl_ns[0]
+            ret.append(f"""{sig.defn(name=op_name)}{{
+    {deprecated_warn}
+    OP_EXEC_LOG({impl_name}, "exec aten", {inputs_list});
+    if ({is_aclnn_only}) {{
+        TORCH_CHECK(false,
+            "Current device only support aclnn operator, "
+            "but current operator {impl_name} do not have aclnn implementation",
+            PTA_ERROR(ErrCode::NOT_SUPPORT));
+    }}
+    return {ns}::{impl_name}({args_exprs_str});
+}}
+""")
+        if f.sparse is not None:
+            ret.append(f"""{sig.defn(name=op_name + "_sparse")}{{
+    {deprecated_warn}
+    OP_EXEC_LOG({impl_name}, "exec aten", {inputs_list});
+    return sparse::{impl_name}_sparse({args_exprs_str});
+}}
+""")
+    return ret
+````
+
+## src-pool-opapi
+
+**op_api::avg_pool2d：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/ops/opapi/AvgPool2dKernelNpuOpApi.cpp
+// 起始行：117
+
+at::Tensor avg_pool2d(
+    const at::Tensor& self,
+    at::IntArrayRef kernel_size,
+    at::IntArrayRef stride,
+    at::IntArrayRef padding,
+    bool ceil_mode,
+    bool count_include_pad,
+    c10::optional<int64_t> divisor_override) {
+  c10::SmallVector<int64_t, op_infer::SIZE> output_size = calc_output_size_with_generalized_attrs(
+      self, kernel_size, stride, padding, ceil_mode, count_include_pad, divisor_override);
+
+  at::Tensor result = at_npu::native::OpPreparation::apply_tensor_without_format(self, output_size);
+
+  DO_COMPATIBILITY(
+      aclnnAvgPool2d,
+      acl_op::avg_pool2d(self, kernel_size, stride, padding, ceil_mode, count_include_pad, divisor_override));
+
+  avg_pool2d_out_npu_nocheck_opapi(
+      result, self, kernel_size, stride, padding, ceil_mode, count_include_pad, divisor_override);
+
+  return result;
+}
+````
+
+## src-pool-generalize
+
+**calc_output_size_with_generalized_attrs：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/ops/opapi/AvgPool2dKernelNpuOpApi.cpp
+// 起始行：55
+
+small_vector calc_output_size_with_generalized_attrs(
+    const at::Tensor& self,
+    at::IntArrayRef kernel_size,
+    at::IntArrayRef stride,
+    at::IntArrayRef padding,
+    bool ceil_mode,
+    bool count_include_pad,
+    c10::optional<int64_t> divisor_override) {
+  // generalize kernels, strides and paddings to 2D-shape
+  TORCH_CHECK(
+      !kernel_size.empty(),
+      "kernel_size must either be a single int, or a tuple of two ints",
+      OPS_ERROR(ErrCode::PARAM));
+  const int64_t k_h = kernel_size[0];
+  const int64_t k_w = kernel_size.size() == 1 ? k_h : kernel_size[1];
+  c10::SmallVector<int64_t, op_infer::SIZE> kernel_sizes = {k_h, k_w};
+  at::IntArrayRef kernels = at::IntArrayRef(kernel_sizes);
+
+  const int64_t s_h = stride.empty() ? k_h : stride[0];
+  const int64_t s_w = stride.empty() ? k_w : stride.size() == 1 ? s_h : stride[1];
+  c10::SmallVector<int64_t, op_infer::SIZE> stride_sizes = {s_h, s_w};
+  TORCH_CHECK(s_h != 0 && s_w != 0, "stride should not be zero", OPS_ERROR(ErrCode::VALUE));
+  at::IntArrayRef strides = at::IntArrayRef(stride_sizes);
+
+  const int64_t pad_h = padding[0];
+  const int64_t pad_w = padding.size() == 1 ? pad_h : padding[1];
+  c10::SmallVector<int64_t, op_infer::SIZE> padding_sizes = {pad_h, pad_w};
+  TORCH_CHECK(pad_h >= 0 && pad_w >= 0, "pad should not be less than 0", OPS_ERROR(ErrCode::VALUE));
+  TORCH_CHECK(
+      pad_h <= k_h / 2 && pad_w <= k_w / 2,
+      "pad should be smaller than or equal to half of kernel size",
+      OPS_ERROR(ErrCode::VALUE));
+  at::IntArrayRef paddings = at::IntArrayRef(padding_sizes);
+
+  auto output_size = op_infer::avg_pool2d_npu_output_size(self, kernels, strides, paddings, ceil_mode);
+
+  return output_size;
+}
+````
+
+## src-pool-output-size
+
+**op_infer::avg_pool2d_npu_output_size：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/KernelNpuOutputSize.cpp
+// 起始行：237
+
+c10::SmallVector<int64_t, SIZE> avg_pool2d_npu_output_size(
+    const at::Tensor& self,
+    c10::IntArrayRef kernel_size,
+    c10::IntArrayRef stride,
+    c10::IntArrayRef padding,
+    bool ceil_mode) {
+  TORCH_CHECK(self.dim() == 3 || self.dim() == 4, "tensor self's dimension must be 3 or 4", OPS_ERROR(ErrCode::PARAM));
+  TORCH_CHECK(kernel_size.size() == 2, "kernel_size length should be 2", OPS_ERROR(ErrCode::PARAM));
+  TORCH_CHECK(stride.size() == 2, "stride length should be 2", OPS_ERROR(ErrCode::PARAM));
+  TORCH_CHECK(stride[0] * stride[1] != 0, "stride should not contain zero", OPS_ERROR(ErrCode::PARAM));
+  TORCH_CHECK(padding.size() == 2, "padding length should be 2", OPS_ERROR(ErrCode::PARAM));
+
+  int self_h = self.size(-2);
+  int self_w = self.size(-1);
+  int64_t kernel_h =
+      div_rtn<int64_t>(
+          self_h + 2 * padding[0] - (kernel_size[0] - 1) - 1 + (ceil_mode ? stride[0] - 1 : 0), stride[0]) +
+      1;
+  int64_t kernel_w =
+      div_rtn<int64_t>(
+          self_w + 2 * padding[1] - (kernel_size[1] - 1) - 1 + (ceil_mode ? stride[1] - 1 : 0), stride[1]) +
+      1;
+  if (ceil_mode) {
+    if ((kernel_h - 1) * stride[0] >= self_h + padding[0]) {
+      --kernel_h;
+    }
+
+    if ((kernel_w - 1) * stride[1] >= self_w + padding[1]) {
+      --kernel_w;
+    }
+  }
+
+  c10::SmallVector<int64_t, SIZE> output_size;
+  if (self.dim() == 3) {
+    output_size = {self.size(0), kernel_h, kernel_w};
+  } else {
+    output_size = {self.size(0), self.size(1), kernel_h, kernel_w};
+  }
+  TORCH_CHECK(
+      kernel_h >= 1 && kernel_w >= 1,
+      "Given input size: (",
+      self.size(-3),
+      "x",
+      self.size(-2),
+      "x",
+      self.size(-1),
+      "). ",
+      "Calculated output size: (",
+      self.size(-3),
+      "x",
+      kernel_h,
+      "x",
+      kernel_w,
+      "). ",
+      "Output size is too small",
+      OPS_ERROR(ErrCode::VALUE));
+  return output_size;
+}
+````
+
+## src-pool-output-allocation
+
+**输出分配：完整 apply_tensor_use_empty 与本例使用的重载**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/utils/OpPreparation.cpp
+// 起始行：392
+
+inline at::Tensor apply_tensor_use_empty(c10::IntArrayRef sizes, const c10::TensorOptions& options) {
+  c10::optional<c10::Device> device_opt = options.device_opt();
+  if (c10::device_or_default(device_opt).type() != c10::DeviceType::PrivateUse1) {
+    device_opt = at::Device(c10::DeviceType::PrivateUse1);
+  }
+  return NPUNativeFunctions::empty(
+      sizes, options.dtype().toScalarType(), c10::nullopt, device_opt, false, c10::MemoryFormat::Contiguous);
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/utils/OpPreparation.cpp
+// 起始行：405
+
+at::Tensor OpPreparation::apply_tensor_without_format(const at::Tensor& src, c10::IntArrayRef sizes) {
+  return apply_tensor_use_empty(sizes, src.options());
+}
+````
+
+## src-pool-compatibility
+
+**DO_COMPATIBILITY：完整宏**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：94
+
+#define DO_COMPATIBILITY(aclnn_api, originCallExpression)                                         \
+  do {                                                                                            \
+    static const auto getWorkspaceSizeFuncAddr = GetOpApiFuncAddr(#aclnn_api "GetWorkspaceSize"); \
+    static const auto opApiFuncAddr = GetOpApiFuncAddr(#aclnn_api);                               \
+    static const auto isAclnnOnly = c10_npu::IsAclnnOnly();                                       \
+    if (getWorkspaceSizeFuncAddr == nullptr || opApiFuncAddr == nullptr) {                        \
+      if (isAclnnOnly) {                                                                          \
+        TORCH_CHECK(                                                                              \
+            false,                                                                                \
+            "Current device only support aclnn operators, but ",                                  \
+            #aclnn_api,                                                                           \
+            " or ",                                                                               \
+            #aclnn_api,                                                                           \
+            "GetWorkspaceSize not found",                                                         \
+            OPS_ERROR(ErrCode::NOT_SUPPORT));                                                     \
+      }                                                                                           \
+      ASCEND_LOGW(                                                                                \
+          "%s or %sGetWorkspaceSize not in %s, or %s not found. Will call %s",                    \
+          #aclnn_api,                                                                             \
+          #aclnn_api,                                                                             \
+          GetOpApiLibName(),                                                                      \
+          GetOpApiLibName(),                                                                      \
+          #originCallExpression);                                                                 \
+      return originCallExpression;                                                                \
+    }                                                                                             \
+  } while (0)
+````
+
+## src-pool-opapi-helper
+
+**avg_pool2d_out_npu_nocheck_opapi：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/ops/opapi/AvgPool2dKernelNpuOpApi.cpp
+// 起始行：24
+
+at::Tensor& avg_pool2d_out_npu_nocheck_opapi(
+    at::Tensor& result,
+    const at::Tensor& self,
+    at::IntArrayRef kernel,
+    at::IntArrayRef stride,
+    at::IntArrayRef padding,
+    bool ceil_mode,
+    bool count_include_pad,
+    c10::optional<int64_t> divisor_override) {
+  int64_t s_divisor_override = 0;
+  if (divisor_override.has_value()) {
+    s_divisor_override = divisor_override.value();
+    TORCH_CHECK(s_divisor_override != 0, "divisor must be not zero", OPS_ERROR(ErrCode::VALUE));
+  }
+
+  const int8_t cube_math_type = at_npu::native::OpPreparation::get_cube_math_type(false);
+  EXEC_NPU_CMD(
+      aclnnAvgPool2d,
+      self,
+      kernel,
+      stride,
+      padding,
+      ceil_mode,
+      count_include_pad,
+      s_divisor_override,
+      cube_math_type,
+      result);
+
+  return result;
+}
+````
+
+## src-opapi-symbol
+
+**ACLNN 动态符号查找：完整函数与功能库查询宏**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.cpp
+// 起始行：817
+
+void* GetOpApiFuncAddr(const char* apiName) {
+  if (!g_custom_lib_path.empty()) {
+    for (auto& it : g_custom_lib_path) {
+      auto cust_opapi_lib = real_path(it + "/" + GetCustOpApiLibName());
+      if (cust_opapi_lib.empty()) {
+        continue;
+      }
+      auto custOpApiHandler = GetOpApiLibHandler(cust_opapi_lib.c_str());
+      if (custOpApiHandler != nullptr) {
+        auto funcAddr = GetOpApiFuncAddrInLib(custOpApiHandler, GetCustOpApiLibName(), apiName);
+        if (funcAddr != nullptr) {
+          // check owner
+          if (!checkOwner(cust_opapi_lib)) {
+            continue;
+          }
+          ASCEND_LOGI("%s is found in %s.", apiName, cust_opapi_lib.c_str());
+          return funcAddr;
+        }
+      }
+    }
+    ASCEND_LOGI("%s is not in custom lib.", apiName);
+  }
+
+  if (!g_default_custom_lib_path.empty()) {
+    for (auto& it : g_default_custom_lib_path) {
+      auto default_cust_opapi_lib = real_path(it + "/" + GetCustOpApiLibName());
+      if (default_cust_opapi_lib.empty()) {
+        continue;
+      }
+      auto custOpApiHandler = GetOpApiLibHandler(default_cust_opapi_lib.c_str());
+      if (custOpApiHandler != nullptr) {
+        auto funcAddr = GetOpApiFuncAddrInLib(custOpApiHandler, GetCustOpApiLibName(), apiName);
+        if (funcAddr != nullptr) {
+          // check owner
+          if (!checkOwner(default_cust_opapi_lib)) {
+            continue;
+          }
+          ASCEND_LOGI("%s is found in %s.", apiName, default_cust_opapi_lib.c_str());
+          return funcAddr;
+        }
+      }
+    }
+    ASCEND_LOGI("%s is not in default custom lib.", apiName);
+  }
+
+  if (!g_opApiHandlers.empty()) {
+    for (size_t i = 0; i < g_opApiHandlers.size(); ++i) {
+      if (g_opApiHandlers[i] != nullptr) {
+        auto funcAddr = GetOpApiFuncAddrInLib(g_opApiHandlers[i], g_opApiSoFiles[i].c_str(), apiName);
+        if (funcAddr != nullptr) {
+          ASCEND_LOGI("%s is found in %s.", apiName, g_opApiSoFiles[i].c_str());
+          return funcAddr;
+        }
+      }
+    }
+  }
+
+  static auto opApiHandler = GetOpApiLibHandler(GetOpApiLibName());
+  if (opApiHandler != nullptr) {
+    auto funcAddr = GetOpApiFuncAddrInLib(opApiHandler, GetOpApiLibName(), apiName);
+    if (funcAddr != nullptr) {
+      return funcAddr;
+    }
+  }
+  return GetOpApiFuncAddrFromFeatureLib(apiName);
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：53
+
+inline const char* GetOpApiLibName(void) {
+  return "libopapi.so";
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：69
+
+inline void* GetOpApiLibHandler(const char* libName) {
+  auto handler = dlopen(libName, RTLD_LAZY);
+  if (handler == nullptr) {
+    ASCEND_LOGW("dlopen %s failed, error:%s.", libName, dlerror());
+  }
+  return handler;
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：61
+
+inline void* GetOpApiFuncAddrInLib(void* handler, const char* libName, const char* apiName) {
+  auto funcAddr = dlsym(handler, apiName);
+  if (funcAddr == nullptr) {
+    ASCEND_LOGW("dlsym %s from %s failed, error:%s.", apiName, libName, dlerror());
+  }
+  return funcAddr;
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：77
+
+#define GET_OP_API_FUNC_FROM_FEATURE_LIB(lib_handler, lib_name, api_name)           \
+  do {                                                                              \
+    static auto lib_handler = GetOpApiLibHandler((lib_name));                       \
+    if ((lib_handler) != nullptr) {                                                 \
+      auto funcAddr = GetOpApiFuncAddrInLib((lib_handler), (lib_name), (api_name)); \
+      if (funcAddr != nullptr) {                                                    \
+        return funcAddr;                                                            \
+      }                                                                             \
+    }                                                                               \
+  } while (0)
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.cpp
+// 起始行：757
+
+void* GetOpApiFuncAddrFromFeatureLib(const char* api_name) {
+  GET_OP_API_FUNC_FROM_FEATURE_LIB(ops_infer_handler, "libaclnn_ops_infer.so", api_name);
+  GET_OP_API_FUNC_FROM_FEATURE_LIB(ops_train_handler, "libaclnn_ops_train.so", api_name);
+  GET_OP_API_FUNC_FROM_FEATURE_LIB(math_handler, "libaclnn_math.so", api_name);
+  GET_OP_API_FUNC_FROM_FEATURE_LIB(sparse_handler, "libaclnn_sparse.so", api_name);
+  GET_OP_API_FUNC_FROM_FEATURE_LIB(fft_handler, "libaclnn_fft.so", api_name);
+  GET_OP_API_FUNC_FROM_FEATURE_LIB(rand_handler, "libaclnn_rand.so", api_name);
+  return nullptr;
+}
+````
+
+## src-exec-npu-select
+
+**EXEC_NPU_CMD：完整 V1/V2 选择宏**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：485
+
+#define EXEC_NPU_CMD(aclnn_api, ...)                                                      \
+  do {                                                                                    \
+    const auto task_queue_enable = c10_npu::option::OptionsManager::GetTaskQueueEnable(); \
+    if (task_queue_enable == 2) {                                                         \
+      EXEC_NPU_CMD_V2(aclnn_api, __VA_ARGS__);                                            \
+    } else {                                                                              \
+      EXEC_NPU_CMD_V1(aclnn_api, __VA_ARGS__);                                            \
+    }                                                                                     \
+  } while (false)
+````
+
+## src-exec-npu-v1
+
+**EXEC_NPU_CMD_V1：完整宏**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：343
+
+#define EXEC_NPU_CMD_V1(aclnn_api, ...)                                                                 \
+  do {                                                                                                  \
+    static const auto getWorkspaceSizeFuncAddr = GetOpApiFuncAddr(#aclnn_api "GetWorkspaceSize");       \
+    static const auto opApiFuncAddr = GetOpApiFuncAddr(#aclnn_api);                                     \
+    static const auto initMemAddr = GetOpApiFuncAddr("InitHugeMemThreadLocal");                         \
+    static const auto unInitMemAddr = GetOpApiFuncAddr("UnInitHugeMemThreadLocal");                     \
+    static const auto releaseMemAddr = GetOpApiFuncAddr("ReleaseHugeMem");                              \
+    TORCH_CHECK(                                                                                        \
+        getWorkspaceSizeFuncAddr != nullptr && opApiFuncAddr != nullptr,                                \
+        #aclnn_api,                                                                                     \
+        " or ",                                                                                         \
+        #aclnn_api "GetWorkspaceSize",                                                                  \
+        " not in ",                                                                                     \
+        GetOpApiLibName(),                                                                              \
+        ", or ",                                                                                        \
+        GetOpApiLibName(),                                                                              \
+        " not found.",                                                                                  \
+        OPS_ERROR(ErrCode::PTR));                                                                       \
+    auto acl_stream = c10_npu::getCurrentNPUStream().stream(false);                                     \
+    if (c10_npu::check_enqueue_need_use(acl_stream)) {                                                  \
+      c10_npu::UseStreamResInCurrentThread(acl_stream);                                                 \
+    }                                                                                                   \
+    OP_EXEC_LOG_WITH_TASK_QUEUE(#aclnn_api, "EXEC_NPU_CMD", "1", acl_stream, __VA_ARGS__);              \
+    uint64_t workspace_size = 0;                                                                        \
+    uint64_t* workspace_size_addr = &workspace_size;                                                    \
+    aclOpExecutor* executor = nullptr;                                                                  \
+    aclOpExecutor** executor_addr = &executor;                                                          \
+    InitHugeMemThreadLocal initMemFunc = reinterpret_cast<InitHugeMemThreadLocal>(initMemAddr);         \
+    UnInitHugeMemThreadLocal unInitMemFunc = reinterpret_cast<UnInitHugeMemThreadLocal>(unInitMemAddr); \
+    auto snapshot = c10_npu::CaptureDeterministicSnapshot();                                            \
+    if (hit_cache(acl_stream, #aclnn_api, opApiFuncAddr, snapshot, __VA_ARGS__)) {                      \
+      break;                                                                                            \
+    }                                                                                                   \
+    if (initMemFunc) {                                                                                  \
+      initMemFunc(nullptr, false);                                                                      \
+    }                                                                                                   \
+    auto converted_params = ConvertTypes(__VA_ARGS__, workspace_size_addr, executor_addr);              \
+    static auto getWorkspaceSizeFunc = ConvertToOpApiFunc(converted_params, getWorkspaceSizeFuncAddr);  \
+    auto workspace_status = call(getWorkspaceSizeFunc, converted_params);                               \
+    NPU_CHECK_ERROR(workspace_status, "call " #aclnn_api " failed");                                    \
+    void* workspace_addr = nullptr;                                                                     \
+    at::Tensor workspace_tensor;                                                                        \
+    if (workspace_size != 0) {                                                                          \
+      workspace_tensor = at_npu::native::OpPreparation::unsafe_empty_workspace(workspace_size);         \
+      workspace_addr = const_cast<void*>(workspace_tensor.storage().data());                            \
+    }                                                                                                   \
+    auto acl_call = [converted_params, workspace_addr, workspace_size, acl_stream, executor]() -> int { \
+      if (c10_npu::check_dequeue_need_use(acl_stream)) {                                                \
+        c10_npu::UseStreamResInCurrentThread(acl_stream);                                               \
+      }                                                                                                 \
+      OpApiFunc opApiFunc = reinterpret_cast<OpApiFunc>(opApiFuncAddr);                                 \
+      auto api_ret = opApiFunc(workspace_addr, workspace_size, executor, acl_stream);                   \
+      NPU_CHECK_ERROR(api_ret, "call " #aclnn_api " failed");                                           \
+      ReleaseConvertTypes(converted_params);                                                            \
+      ReleaseHugeMem releaseMemFunc = reinterpret_cast<ReleaseHugeMem>(releaseMemAddr);                 \
+      if (releaseMemFunc) {                                                                             \
+        releaseMemFunc(nullptr, false);                                                                 \
+      }                                                                                                 \
+      return api_ret;                                                                                   \
+    };                                                                                                  \
+    at_npu::native::OpCommand::RunOpApiV2(#aclnn_api, acl_call);                                        \
+    if (unInitMemFunc) {                                                                                \
+      unInitMemFunc(nullptr, false);                                                                    \
+    }                                                                                                   \
+    UnInitCacheThreadLocal();                                                                           \
+  } while (false)
+````
+
+## src-exec-npu-v2
+
+**EXEC_NPU_CMD_V2：完整宏**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：410
+
+#define EXEC_NPU_CMD_V2(aclnn_api, ...)                                                                               \
+  do {                                                                                                                \
+    static const auto getWorkspaceSizeFuncAddr = GetOpApiFuncAddr(#aclnn_api "GetWorkspaceSize");                     \
+    static const auto opApiFuncAddr = GetOpApiFuncAddr(#aclnn_api);                                                   \
+    static const auto initMemAddr = GetOpApiFuncAddr("InitHugeMemThreadLocal");                                       \
+    static const auto unInitMemAddr = GetOpApiFuncAddr("UnInitHugeMemThreadLocal");                                   \
+    static const auto releaseMemAddr = GetOpApiFuncAddr("ReleaseHugeMem");                                            \
+    TORCH_CHECK(                                                                                                      \
+        getWorkspaceSizeFuncAddr != nullptr && opApiFuncAddr != nullptr,                                              \
+        #aclnn_api,                                                                                                   \
+        " or ",                                                                                                       \
+        #aclnn_api "GetWorkspaceSize",                                                                                \
+        " not in ",                                                                                                   \
+        GetOpApiLibName(),                                                                                            \
+        ", or ",                                                                                                      \
+        GetOpApiLibName(),                                                                                            \
+        " not found.",                                                                                                \
+        OPS_ERROR(ErrCode::PTR));                                                                                     \
+    auto acl_stream = c10_npu::getCurrentNPUStream().stream(false);                                                   \
+    if (c10_npu::check_enqueue_need_use(acl_stream)) {                                                                \
+      c10_npu::UseStreamResInCurrentThread(acl_stream);                                                               \
+    }                                                                                                                 \
+    OP_EXEC_LOG_WITH_TASK_QUEUE(#aclnn_api, "EXEC_NPU_CMD", "2", acl_stream, __VA_ARGS__);                            \
+    auto copied_params = CopyTypesV2(__VA_ARGS__);                                                                    \
+    uint32_t aic_num = UINT32_MAX;                                                                                    \
+    uint32_t aiv_num = UINT32_MAX;                                                                                    \
+    if (c10_npu::is_core_control_enabled()) {                                                                         \
+      aic_num = c10_npu::GetResInCurrentThread(c10_npu::acl::ACL_RT_DEV_RES_CUBE_CORE);                               \
+      aiv_num = c10_npu::GetResInCurrentThread(c10_npu::acl::ACL_RT_DEV_RES_VECTOR_CORE);                             \
+    }                                                                                                                 \
+    auto snapshot = c10_npu::CaptureDeterministicSnapshot();                                                          \
+    auto acl_call = [copied_params, acl_stream, aic_num, aiv_num, snapshot]() -> int {                                \
+      if (c10_npu::check_dequeue_need_use(acl_stream)) {                                                              \
+        c10_npu::UseStreamResInCurrentThread(acl_stream);                                                             \
+      }                                                                                                               \
+      uint64_t workspace_size = 0;                                                                                    \
+      uint64_t* workspace_size_addr = &workspace_size;                                                                \
+      aclOpExecutor* executor = nullptr;                                                                              \
+      aclOpExecutor** executor_addr = &executor;                                                                      \
+      InitHugeMemThreadLocal initMemFunc = reinterpret_cast<InitHugeMemThreadLocal>(initMemAddr);                     \
+      UnInitHugeMemThreadLocal unInitMemFunc = reinterpret_cast<UnInitHugeMemThreadLocal>(unInitMemAddr);             \
+      int api_ret = 0;                                                                                                \
+      if (hit_cache_v2(acl_stream, #aclnn_api, opApiFuncAddr, copied_params, &api_ret, aic_num, aiv_num, snapshot)) { \
+        return api_ret;                                                                                               \
+      }                                                                                                               \
+      if (initMemFunc) {                                                                                              \
+        initMemFunc(nullptr, false);                                                                                  \
+      }                                                                                                               \
+      auto converted_params = ConvertTypesV2(copied_params, workspace_size_addr, executor_addr);                      \
+      auto getWorkspaceSizeFunc = ConvertToOpApiFunc(converted_params, getWorkspaceSizeFuncAddr);                     \
+      auto workspace_status = call(getWorkspaceSizeFunc, converted_params);                                           \
+      NPU_CHECK_ERROR(workspace_status, "call " #aclnn_api " failed");                                                \
+      void* workspace_addr = nullptr;                                                                                 \
+      at::Tensor workspace_tensor;                                                                                    \
+      if (workspace_size != 0) {                                                                                      \
+        workspace_tensor = at_npu::native::OpPreparation::unsafe_empty_workspace(workspace_size, acl_stream);         \
+        workspace_addr = const_cast<void*>(workspace_tensor.storage().data());                                        \
+      }                                                                                                               \
+      OpApiFunc opApiFunc = reinterpret_cast<OpApiFunc>(opApiFuncAddr);                                               \
+      api_ret = opApiFunc(workspace_addr, workspace_size, executor, acl_stream);                                      \
+      NPU_CHECK_ERROR(api_ret, "call " #aclnn_api " failed");                                                         \
+      ReleaseConvertTypes(converted_params);                                                                          \
+      ReleaseHugeMem releaseMemFunc = reinterpret_cast<ReleaseHugeMem>(releaseMemAddr);                               \
+      if (releaseMemFunc) {                                                                                           \
+        releaseMemFunc(nullptr, false);                                                                               \
+      }                                                                                                               \
+      if (unInitMemFunc) {                                                                                            \
+        unInitMemFunc(nullptr, false);                                                                                \
+      }                                                                                                               \
+      UnInitCacheThreadLocal();                                                                                       \
+      return api_ret;                                                                                                 \
+    };                                                                                                                \
+    at_npu::native::OpCommand::RunOpApiV2(#aclnn_api, acl_call);                                                      \
+  } while (false)
+````
+
+## src-opapi-convert-pack
+
+**参数转换：完整 ConvertTypes 与整数数组、普通值重载**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common_base.h
+// 起始行：274
+
+template <typename... Ts>
+constexpr auto ConvertTypes(Ts&... args) {
+  return std::make_tuple(ConvertType(args)...);
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.cpp
+// 起始行：1011
+
+aclIntArray* ConvertType(const at::IntArrayRef& at_array) {
+  static const auto aclCreateIntArray = GET_OP_API_FUNC(aclCreateIntArray);
+  if (aclCreateIntArray == nullptr) {
+    return nullptr;
+  }
+  auto array = aclCreateIntArray(at_array.data(), at_array.size());
+  return array;
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common_base.h
+// 起始行：114
+
+template <typename T>
+T ConvertType(T value) {
+  return value;
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common_base.h
+// 起始行：268
+
+template <typename Tuple>
+void ReleaseConvertTypes(Tuple& t) {
+  static constexpr auto size = std::tuple_size<Tuple>::value;
+  CallRelease(t, std::make_index_sequence<size>{});
+}
+````
+
+## src-opapi-convert-tensor
+
+**ConvertType(at::Tensor)：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.cpp
+// 起始行：884
+
+aclTensor* ConvertType(const at::Tensor& at_tensor) {
+  static const auto aclCreateTensor = GET_OP_API_FUNC(aclCreateTensor);
+  if (aclCreateTensor == nullptr) {
+    return nullptr;
+  }
+
+  if (!at_tensor.defined()) {
+    return nullptr;
+  }
+  CheckNpuTensorValid(at_tensor);
+  at::ScalarType scalar_data_type = at_tensor.scalar_type();
+  aclDataType acl_data_type = at_npu::native::OpPreparation::convert_to_acl_data_type(scalar_data_type);
+  c10::SmallVector<int64_t, MAX_DIM_NUM> storageDims;
+  c10::SmallVector<int64_t, MAX_DIM_NUM> wrapperStride = op_infer::array_to_small_vector(at_tensor.strides());
+  c10::SmallVector<int64_t, MAX_DIM_NUM> wrapperShape = op_infer::array_to_small_vector(at_tensor.sizes());
+
+  const auto dimNum = at_tensor.sizes().size();
+  aclFormat format = ACL_FORMAT_ND;
+  if (!at_npu::native::FormatHelper::IsOpInputBaseFormat(at_tensor)) {
+    format = torch_npu::NPUBridge::GetNpuStorageImpl(at_tensor)->npu_desc_.npu_format_;
+    // if acl_data_type is ACL_STRING, storageDims is empty.
+    if (acl_data_type != ACL_STRING) {
+      TORCH_CHECK(
+          at_tensor.itemsize() > 0, "the itemsize of tensor must be greater than 0.", OPS_ERROR(ErrCode::VALUE));
+      storageDims = torch_npu::NPUBridge::GetNpuStorageImpl(at_tensor)->npu_desc_.storage_sizes_;
+      if (Is4BitDtype(acl_data_type)) {
+        storageDims.back() *= FP4_IN_INT8;
+        CollectB4ShapeInfo(at_tensor, wrapperStride, wrapperShape);
+        auto realFormat = FORMAT_FAKE_TO_REAL.find(format);
+        TORCH_CHECK(
+            realFormat != FORMAT_FAKE_TO_REAL.end(), "not support convert ", format, ".", OPS_ERROR(ErrCode::VALUE));
+        format = realFormat->second;
+      }
+    }
+  } else {
+    switch (dimNum) {
+      case NCL_DIM_NUM:
+        format = ACL_FORMAT_NCL;
+        break;
+      case NCHW_DIM_NUM:
+        format = ACL_FORMAT_NCHW;
+        break;
+      case NCDHW_DIM_NUM:
+        format = ACL_FORMAT_NCDHW;
+        break;
+      default:
+        format = ACL_FORMAT_ND;
+    }
+    // if acl_data_type is ACL_STRING, storageDims is empty.
+    if (acl_data_type != ACL_STRING) {
+      TORCH_CHECK(
+          at_tensor.itemsize() > 0, "the itemsize of tensor must be greater than 0.", OPS_ERROR(ErrCode::VALUE));
+      if (Is4BitDtype(acl_data_type)) {
+        storageDims.push_back(at_tensor.storage().nbytes() / at_tensor.itemsize() * FP4_IN_INT8);
+        CollectB4ShapeInfo(at_tensor, wrapperStride, wrapperShape);
+      } else {
+        storageDims.push_back(at_tensor.storage().nbytes() / at_tensor.itemsize());
+      }
+    }
+  }
+
+  if (at_npu::native::OpPreparation::is_scalar_wrapped_to_tensor(at_tensor)) {
+    c10::Scalar expScalar = at_tensor.item();
+    at::Tensor aclInput = at_npu::native::OpPreparation::copy_scalar_to_device(expScalar, scalar_data_type);
+    return aclCreateTensor(
+        aclInput.sizes().data(),
+        aclInput.sizes().size(),
+        acl_data_type,
+        aclInput.strides().data(),
+        aclInput.storage_offset(),
+        format,
+        storageDims.data(),
+        storageDims.size(),
+        const_cast<void*>(aclInput.storage().data()));
+  }
+
+  auto acl_tensor = aclCreateTensor(
+      wrapperShape.data(),
+      at_tensor.sizes().size(),
+      acl_data_type,
+      wrapperStride.data(),
+      at_tensor.storage_offset(),
+      format,
+      storageDims.data(),
+      storageDims.size(),
+      const_cast<void*>(at_tensor.storage().data()));
+  return acl_tensor;
+}
+````
+
+## src-opapi-function-call
+
+**ConvertToOpApiFunc 与 call：完整重载及第二段指针类型**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common_base.h
+// 起始行：82
+
+using OpApiFunc = int (*)(void*, uint64_t, aclOpExecutor*, const aclrtStream);
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common_base.h
+// 起始行：374
+
+template <typename Function, typename Tuple, size_t... I>
+auto call(Function f, Tuple t, std::index_sequence<I...>) {
+  return f(std::get<I>(t)...);
+}
+
+template <typename Function, typename Tuple>
+auto call(Function f, Tuple t) {
+  static constexpr auto size = std::tuple_size<Tuple>::value;
+  return call(f, t, std::make_index_sequence<size>{});
+}
+
+template <typename Tuple, size_t... I>
+auto ConvertToOpApiFunc(const Tuple& params, void* opApiAddr, std::index_sequence<I...>) {
+  typedef int (*OpApiFunc)(typename std::decay<decltype(std::get<I>(params))>::type...);
+  auto func = reinterpret_cast<OpApiFunc>(opApiAddr);
+  return func;
+}
+
+template <typename Tuple>
+auto ConvertToOpApiFunc(const Tuple& params, void* opApiAddr) {
+  static constexpr auto size = std::tuple_size<Tuple>::value;
+  return ConvertToOpApiFunc(params, opApiAddr, std::make_index_sequence<size>{});
+}
+````
+
+## src-opapi-workspace
+
+**workspace 分配：两个完整 unsafe_empty_workspace 重载**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/utils/OpPreparation.cpp
+// 起始行：413
+
+at::Tensor OpPreparation::unsafe_empty_workspace(uint64_t workspace_size) {
+#ifndef BUILD_LIBTORCH
+  torch_npu::profiler::NPURecordFunction profiler_guard;
+#endif
+  ASCEND_LOGD("Alloc workspace %zu bytes unsafely.", workspace_size);
+  c10::Allocator* allocator = c10_npu::NPUCachingAllocator::get();
+  c10::intrusive_ptr<c10::StorageImpl> storage_impl = torch_npu::make_npu_storage_impl(
+      c10::StorageImpl::use_byte_size_t(),
+      c10::SymInt(workspace_size),
+      allocator->allocate(workspace_size),
+      allocator,
+      true);
+  static auto dtype = c10::scalarTypeToTypeMeta(dtype_or_default(at::kByte));
+  auto tensor = at::detail::make_tensor<torch_npu::NPUTensorImpl>(storage_impl, dtype);
+  tensor.unsafeGetTensorImpl()->empty_tensor_restride(c10::MemoryFormat::Contiguous);
+  return tensor;
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/utils/OpPreparation.cpp
+// 起始行：431
+
+at::Tensor OpPreparation::unsafe_empty_workspace(uint64_t workspace_size, aclrtStream stream) {
+#ifndef BUILD_LIBTORCH
+  torch_npu::profiler::NPURecordFunction profiler_guard;
+#endif
+  ASCEND_LOGD("Alloc workspace %zu bytes unsafely.", workspace_size);
+  c10::Allocator* allocator = c10_npu::NPUWorkspaceAllocator::get();
+  c10::intrusive_ptr<c10::StorageImpl> storage_impl = c10::make_intrusive<torch_npu::NPUStorageImpl>(
+      c10::StorageImpl::use_byte_size_t(),
+      workspace_size,
+      c10_npu::NPUWorkspaceAllocator::malloc_with_stream(workspace_size, stream),
+      allocator,
+      true);
+  static auto dtype = c10::scalarTypeToTypeMeta(dtype_or_default(at::kByte));
+  auto tensor = at::detail::make_tensor<torch_npu::NPUTensorImpl>(storage_impl, dtype);
+  tensor.unsafeGetTensorImpl()->empty_tensor_restride(c10::MemoryFormat::Contiguous);
+  return tensor;
+}
+````
+
+## src-opapi-run
+
+**OpCommand::RunOpApiV2：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpCommand.cpp
+// 起始行：234
+
+void OpCommand::RunOpApiV2(const string& op_name, const PROC_FUNC& func, bool sync) {
+#ifndef BUILD_LIBTORCH
+  const c10_npu::impl::PyCallbackTrigger* trigger = c10_npu::impl::NPUTrace::getTrace();
+#endif
+  auto stream = c10_npu::getCurrentNPUStream();
+  if (!stream.isSyncLaunchStream() && c10_npu::option::OptionsManager::GetTaskQueueEnable()) {
+    RECORD_FUNCTION(op_name, std::vector<c10::IValue>({}));
+#ifndef BUILD_LIBTORCH
+    at_npu::native::NpuUtils::ProfReportMarkDataToNpuProfiler(0, op_name);
+#endif
+    ExecuteParasOpApiV2 execParams;
+    execParams.opName = const_cast<std::string*>(&op_name);
+    execParams.customHandler = const_cast<PROC_FUNC*>(&func);
+
+    c10_npu::queue::QueueParas params(c10_npu::queue::EXECUTE_OPAPI_V2, sizeof(ExecuteParasOpApiV2), &execParams);
+
+    auto start = std::chrono::steady_clock::now();
+
+    c10_npu::enCurrentNPUStream(&params);
+
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    TORCH_NPU_DISPATCH_TIME_LOGI("enQueue duration is (ns): %d", duration);
+
+#ifndef BUILD_LIBTORCH
+    at_npu::native::NpuUtils::ProfReportMarkDataToNpuProfiler(1, op_name, params.correlation_id);
+#endif
+  } else {
+#ifndef BUILD_LIBTORCH
+    if (C10_UNLIKELY(trigger)) {
+      trigger->traceNpuAclStartExecution(op_name);
+    }
+#endif
+    OpCommandImpl::RunOpApi(op_name, func);
+    if (c10_npu::option::OptionsManager::CheckBlockingEnable()) {
+      if (c10_npu::currentStreamCaptureStatusMayInitCtx() != c10_npu::CaptureStatus::Active) {
+        NPU_CHECK_ERROR(c10_npu::acl::AclrtSynchronizeStreamWithTimeout(stream));
+      }
+    }
+#ifndef BUILD_LIBTORCH
+    if (C10_UNLIKELY(trigger)) {
+      trigger->traceNpuAclFinishExecution(op_name);
+    }
+#endif
+  }
+  if (sync) {
+    NPU_CHECK_ERROR(c10_npu::acl::AclrtSynchronizeStreamWithTimeout(stream));
+  }
+}
+````
+
+## src-opapi-inner-run
+
+**直接执行回调：完整 RunOpApi 与 InnerRunOpApi**
+
+### src-opapi-run-impl
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：267
+
+void OpCommandImpl::RunOpApi(const string& op_name, PROC_FUNC func) {
+  ASCEND_LOGD("Op %s Run.", op_name.c_str());
+  RECORD_FUNCTION(op_name, std::vector<c10::IValue>({}));
+#ifndef BUILD_LIBTORCH
+  if (PyGILState_Check() != 0) {
+    // we need to release GIL for NPU to compile op.
+    Py_BEGIN_ALLOW_THREADS;
+    ACL_REQUIRE_OK_OP(InnerRunOpApi(op_name, func), op_name.c_str());
+    Py_END_ALLOW_THREADS;
+  } else {
+    ACL_REQUIRE_OK_OP(InnerRunOpApi(op_name, func), op_name.c_str());
+  }
+#else
+  ACL_REQUIRE_OK_OP(InnerRunOpApi(op_name, func), op_name.c_str());
+#endif
+}
+````
+
+### src-opapi-inner-run-impl
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：383
+
+aclError OpCommandImpl::InnerRunOpApi(const string& op_name, PROC_FUNC func) {
+  aclError ret;
+  auto stream = c10_npu::getCurrentNPUStream();
+  if (stream.getRepoStopFlag()) {
+    ASCEND_LOGE("getRepoStopFlag in InnerRun, throw FORCE STOP.");
+    throw std::runtime_error("FORCE STOP." + PTA_ERROR(ErrCode::ACL));
+  }
+  // open the deterministicAlgorithms config
+  auto snapshot = c10_npu::CaptureDeterministicSnapshot();
+  return RunWithDeterministicSnapshot(snapshot, true, [&]() -> aclError {
+    int index = 0;
+    do {
+      ret = func();
+      OPS_CHECK_ERROR(ret, op_name.c_str());
+      index++;
+    } while (NpuUtils::IsOomError(ret, index) && (index < NPU_MAX_OP_EXEC_TRY_NUM));
+    return ret;
+  });
+}
+````
+
+## src-opapi-hit-cache
+
+**V1 的执行器缓存命中路径：完整 hit_cache**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/utils/op_api_common.h
+// 起始行：171
+
+template <typename... Args>
+bool hit_cache(
+    aclrtStream acl_stream,
+    const char* aclnn_api,
+    void* phrase2,
+    const c10_npu::DeterministicSnapshot& snapshot,
+    Args&&... args) {
+  static const auto ptaGetExecCacheAddr = GetOpApiFuncAddr("PTAGetExecCache");
+  static const auto initPTACacheThreadLocalAddr = GetOpApiFuncAddr("InitPTACacheThreadLocal");
+  static const auto setPTAHashKeyAddr = GetOpApiFuncAddr("SetPTAHashKey");
+  static const auto canUsePTACacheAddr = GetOpApiFuncAddr("CanUsePTACache");
+  PTAGetExecCache ptaGetExecCacheFunc = reinterpret_cast<PTAGetExecCache>(ptaGetExecCacheAddr);
+  InitPTACacheThreadLocal initPTACacheThreadLocalFunc =
+      reinterpret_cast<InitPTACacheThreadLocal>(initPTACacheThreadLocalAddr);
+  SetPTAHashKey setPTAHashKeyFunc = reinterpret_cast<SetPTAHashKey>(setPTAHashKeyAddr);
+  CanUsePTACache canUsePTACacheFunc = reinterpret_cast<CanUsePTACache>(canUsePTACacheAddr);
+  bool has_func = ptaGetExecCacheFunc && initPTACacheThreadLocalFunc && setPTAHashKeyFunc;
+  bool can_use = canUsePTACacheFunc && canUsePTACacheFunc(aclnn_api);
+  at_npu::native::ApplyDeterministicSnapshot(snapshot, true);
+  if (!has_func || !can_use) {
+    return false;
+  }
+  uint64_t workspace_size = 0;
+  uint64_t* workspace_size_addr = &workspace_size;
+  initPTACacheThreadLocalFunc();
+  g_hash_offset = 0;
+  auto deterministic_level = snapshot.effective_level;
+  if (c10_npu::is_core_control_enabled()) {
+    auto aic_num = c10_npu::GetResInCurrentThread(c10_npu::acl::ACL_RT_DEV_RES_CUBE_CORE);
+    auto aiv_num = c10_npu::GetResInCurrentThread(c10_npu::acl::ACL_RT_DEV_RES_VECTOR_CORE);
+    add_param_to_buf(aic_num);
+    add_param_to_buf(aiv_num);
+  }
+  auto device = c10_npu::current_device();
+  add_param_to_buf(deterministic_level);
+  add_param_to_buf(std::string(aclnn_api), args...);
+  add_param_to_buf(device);
+  add_param_to_buf((uintptr_t)acl_stream);
+  uint64_t hashId = calc_hash_id();
+  setPTAHashKeyFunc(hashId);
+  aclOpExecutor* executor = ptaGetExecCacheFunc(hashId, workspace_size_addr);
+  if (executor == nullptr) {
+    return false;
+  }
+  void* workspace_addr = nullptr;
+  at::Tensor workspace_tensor;
+  if (workspace_size != 0) {
+    workspace_tensor = at_npu::native::OpPreparation::unsafe_empty_workspace(workspace_size);
+    workspace_addr = const_cast<void*>(workspace_tensor.storage().data());
+  }
+  auto acl_call = [workspace_addr, workspace_size, acl_stream, executor, phrase2]() -> int {
+    OpApiFunc opApiFunc = reinterpret_cast<OpApiFunc>(phrase2);
+    auto api_ret = opApiFunc(workspace_addr, workspace_size, executor, acl_stream);
+    NPU_CHECK_ERROR(api_ret, "call failed");
+    return api_ret;
+  };
+  at_npu::native::OpCommand::RunOpApiV2(aclnn_api, acl_call);
+  UnInitCacheThreadLocal();
+  return true;
+}
+````
+
+## src-jit-options
+
+**JIT 模式的设置、配置处理与查询**
+
+以下摘自本地 torch_npu 源码，分别保留完整 Python 设置函数，以及 C++ 查询函数、缓存声明和配置处理宏。
+
+````python
+# 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/npu/npu_config.py
+# 起始行：98
+
+def set_compile_mode(jit_compile=False):
+    if torch_npu.npu.is_initialized():
+        torch_npu.npu.synchronize()
+    option = {"jitCompile": "enable" if jit_compile else "disable"}
+    torch_npu._C._npu_setOption(option)
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/interface/EnvVariables.cpp
+// 起始行：172
+
+bool CheckJitDisableInner() {
+  auto val = c10_npu::option::GetOption("jitCompile");
+  if (val.has_value()) {
+    if (val.value() == ("disable")) {
+      return true;
+    }
+    if (val.value() == ("enable")) {
+      return false;
+    }
+  }
+  if (c10_npu::GetSocVersion() >= c10_npu::SocVersion::Ascend910B1) {
+    return true;
+  }
+  return false;
+}
+
+REGISTER_OPTION_CACHE(bool, isJitDisable, CheckJitDisableInner)
+REGISTER_OPTION_HOOK(jitCompile, [](const std::string& val) {
+  auto acl_op_init_mode = c10_npu::option::OptionsManager::GetAclOpInitMode();
+  if (acl_op_init_mode == 0) {
+    NPU_CHECK_ERROR(AclSetCompileopt(aclCompileOpt::ACL_OP_JIT_COMPILE, val.c_str()));
+  } else if (GET_OPTION_WITH_CACHE(isJitDisable) != ("disable" == val)) {
+    TORCH_CHECK(
+        acl_op_init_mode != 2,
+        "Jit compile set is disabled! If you want to set, ",
+        "please change the environment variable ACL_OP_INIT_MODE to 0 or 1.",
+        PTA_ERROR(ErrCode::NOT_SUPPORT));
+    NPU_CHECK_ERROR(AclSetCompileopt(aclCompileOpt::ACL_OP_JIT_COMPILE, val.c_str()));
+  }
+  SET_OPTION_WITH_CACHE(isJitDisable, ("disable" == val) ? true : false);
+})
+
+REGISTER_OPTION_HOOK(jitCompileInit, [](const std::string& val) {
+  SET_OPTION_WITH_CACHE(isJitDisable, ("disable" == val) ? true : false);
+})
+
+bool CheckJitDisable() {
+  return GET_OPTION_WITH_CACHE(isJitDisable);
+}
+````
+
+## src-pool-aclop
+
+**acl_op::avg_pool2d：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/ops/aclops/AvgPool2dKernelNpu.cpp
+// 起始行：200
+
+at::Tensor avg_pool2d(
+    const at::Tensor& self,
+    at::IntArrayRef kernel_size,
+    at::IntArrayRef stride,
+    at::IntArrayRef padding,
+    bool ceil_mode,
+    bool count_include_pad,
+    c10::optional<int64_t> divisor_override) {
+  avg_pool2d_parameter_check(self, kernel_size, stride, padding, divisor_override);
+
+  at::Tensor self_copy = self;
+  if (self.dim() == DIMENSION_3D) {
+    self_copy = self_copy.unsqueeze(0);
+  }
+  TORCH_CHECK(
+      !kernel_size.empty(),
+      "kernel_size must either be a single int, or a tuple of two ints",
+      OPS_ERROR(ErrCode::PARAM));
+  const int64_t k_h = kernel_size[0];
+  const int64_t k_w = kernel_size.size() == 1 ? k_h : kernel_size[1];
+
+  c10::SmallVector<int64_t, SIZE> kernel_sizes = {k_h, k_w};
+  at::IntArrayRef kernel_sizess = at::IntArrayRef(kernel_sizes);
+
+  const int64_t d_h = stride.empty() ? k_h : stride[0];
+  const int64_t d_w = stride.empty() ? k_w : stride.size() == 1 ? d_h : stride[1];
+
+  c10::SmallVector<int64_t, SIZE> stride_sizes = {d_h, d_w};
+  TORCH_CHECK(d_h != 0 && d_w != 0, "stride should not be zero", OPS_ERROR(ErrCode::VALUE));
+  at::IntArrayRef stridess = at::IntArrayRef(stride_sizes);
+
+  const int64_t pad_h = padding[0];
+  const int64_t pad_w = padding.size() == 1 ? pad_h : padding[1];
+
+  c10::SmallVector<int64_t, SIZE> padding_sizes = {pad_h, pad_w};
+  TORCH_CHECK(pad_h >= 0 && pad_w >= 0, "pad should not be less than 0", OPS_ERROR(ErrCode::VALUE));
+  TORCH_CHECK(
+      pad_h <= k_h / DIVIDE_TO_HALF && pad_w <= k_w / DIVIDE_TO_HALF,
+      "pad should be smaller than or equal to half of kernel size",
+      OPS_ERROR(ErrCode::VALUE));
+  at::IntArrayRef paddingss = at::IntArrayRef(padding_sizes);
+
+  auto output_sizes = op_infer::avg_pool2d_npu_output_size(self_copy, kernel_sizess, stridess, paddingss, ceil_mode);
+  at::Tensor result = npu_preparation::apply_tensor(self_copy, output_sizes);
+
+  avg_pool2d_out_nocheck(
+      result, self_copy, kernel_sizess, stridess, paddingss, ceil_mode, count_include_pad, divisor_override);
+  if (self.dim() == DIMENSION_3D) {
+    result = result.squeeze(0);
+  }
+  return result;
+}
+````
+
+## src-pool-aclop-check
+
+**旧路径的参数检查：完整 avg_pool2d_parameter_check**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/ops/aclops/AvgPool2dKernelNpu.cpp
+// 起始行：113
+
+void avg_pool2d_parameter_check(
+    const at::Tensor& self,
+    at::IntArrayRef kernel_size,
+    at::IntArrayRef stride,
+    at::IntArrayRef padding,
+    c10::optional<int64_t> divisor_override) {
+  TORCH_CHECK(
+      kernel_size.size() == 1 || kernel_size.size() == TUPLE_ELEMENTS,
+      "avg_pool2d: kernel_size must either be a single int, or a tuple of two ints" + OPS_ERROR(ErrCode::PARAM));
+  TORCH_CHECK(
+      stride.empty() || stride.size() == 1 || stride.size() == TUPLE_ELEMENTS,
+      "avg_pool2d: stride must either be omitted, a single int, or a tuple of two ints" + OPS_ERROR(ErrCode::PARAM));
+  TORCH_CHECK(
+      padding.size() == 1 || padding.size() == TUPLE_ELEMENTS,
+      "avg_pool2d: padding must either be a single int, or a tuple of two ints" + OPS_ERROR(ErrCode::PARAM));
+  TORCH_CHECK(
+      (self.ndimension() == DIMENSION_3D || self.ndimension() == DIMENSION_4D),
+      "non-empty 2D or 3D (batch mode) tensor expected for input" + OPS_ERROR(ErrCode::PARAM));
+  TORCH_CHECK(
+      (!divisor_override.has_value() ||
+       (divisor_override.value() > 0 && divisor_override.value() <= DIVISOR_OVERRIDE_LIMITE)),
+      "The value of divisor_override = ",
+      divisor_override.value(),
+      " is invaild, only support [1, 255] at present." + OPS_ERROR(ErrCode::VALUE));
+}
+````
+
+## src-pool-aclop-padding
+
+**旧路径的填充计算：完整 get_paddings**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/ops/aclops/AvgPool2dKernelNpu.cpp
+// 起始行：31
+
+c10::SmallVector<int64_t, N> get_paddings(
+    const at::Tensor& self,
+    at::IntArrayRef kernel_size,
+    at::IntArrayRef stride,
+    at::IntArrayRef padding,
+    bool ceil_mode) {
+  int64_t pad_down = padding[0];
+  int64_t pad_right = padding[1];
+  int H = self.size(-2);
+  int W = self.size(-1);
+
+  int64_t totalH = H + 2 * padding[0] - kernel_size[0];
+  int64_t totalW = W + 2 * padding[1] - kernel_size[1];
+  TORCH_CHECK(
+      totalH <= std::numeric_limits<int64_t>::max(), "Large padding causing data overflow" + OPS_ERROR(ErrCode::VALUE));
+  TORCH_CHECK(
+      totalW <= std::numeric_limits<int64_t>::max(), "Large padding causing data overflow" + OPS_ERROR(ErrCode::VALUE));
+  int64_t kH = op_infer::CeilDiv(totalH, stride[0]) + 1;
+  int64_t kW = op_infer::CeilDiv(totalW, stride[1]) + 1;
+  if (ceil_mode) {
+    if ((kH - 1) * stride[0] >= H + padding[0]) {
+      --kH;
+      int64_t need_pad_h = (kH - 1) * stride[0] + kernel_size[0] - H;
+      pad_down = need_pad_h - padding[0];
+    }
+    if ((kW - 1) * stride[1] >= W + padding[1]) {
+      --kW;
+      int64_t need_pad_w = (kW - 1) * stride[1] + kernel_size[1] - W;
+      pad_right = need_pad_w - padding[1];
+    }
+  }
+
+  c10::SmallVector<int64_t, N> pads = {padding[0], pad_down, padding[1], pad_right};
+  return pads;
+}
+````
+
+## src-pool-aclop-helper
+
+**旧路径执行辅助函数：完整 avg_pool2d_out_nocheck**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/third_party/op-plugin/op_plugin/ops/aclops/AvgPool2dKernelNpu.cpp
+// 起始行：67
+
+at::Tensor& avg_pool2d_out_nocheck(
+    at::Tensor& result,
+    const at::Tensor& self,
+    at::IntArrayRef kernel_size,
+    at::IntArrayRef stride,
+    at::IntArrayRef padding,
+    bool ceil_mode,
+    bool count_include_pad,
+    c10::optional<int64_t> divisor_override) {
+  if (padding.size() == 1) {
+    c10::SmallVector<int64_t, SIZE> paddings = {padding[0], padding[0]};
+    padding = at::IntArrayRef(paddings);
+  }
+
+  int64_t stride_h = 1;
+  int64_t stride_w = 1;
+  if (!stride.empty()) {
+    stride_h = stride[0];
+    stride_w = stride[1];
+  }
+  c10::SmallVector<int64_t, N> kernel_size_new = {1, 1, kernel_size[0], kernel_size[1]};
+  c10::SmallVector<int64_t, N> strides_size_new = {1, 1, stride_h, stride_w};
+  c10::SmallVector<int64_t, N> pads = get_paddings(self, kernel_size, stride, padding, ceil_mode);
+  bool exclusive = !count_include_pad;
+  int64_t divisor_override_value = divisor_override.value_or(0);
+
+  at_npu::native::OpCommand cmd;
+  cmd.Name("AvgPoolV2")
+      .Input(self)
+      .Output(result)
+      .Attr("ksize", kernel_size_new)
+      .Attr("strides", strides_size_new)
+      .Attr("padding_mode", static_cast<string>("CALCULATED"))
+      .Attr("pads", pads)
+      .Attr("data_format", static_cast<string>("NCHW"))
+      .Attr("global_pooling", false)
+      .Attr("ceil_mode", ceil_mode);
+  if (self.scalar_type() == at::ScalarType::Half || self.scalar_type() == at::ScalarType::Char) {
+    cmd.Attr("exclusive", true);
+  } else {
+    cmd.Attr("exclusive", exclusive);
+  }
+  cmd.Attr("divisor_override", divisor_override_value).Run();
+  return result;
+}
+````
+
+## src-pool-aclop-allocation
+
+**旧路径的输出分配：完整 apply_tensor 与 apply_tensor_with_format**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/utils/OpPreparation.cpp
+// 起始行：242
+
+at::Tensor OpPreparation::apply_tensor(const at::Tensor& src, c10::IntArrayRef sizes) {
+  return apply_tensor_with_format(sizes, src.options(), CalcuOpUtil::GetTensorNpuFormat(src));
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/utils/OpPreparation.cpp
+// 起始行：261
+
+at::Tensor OpPreparation::apply_tensor_with_format(
+    const at::Tensor& src,
+    c10::IntArrayRef sizes,
+    int64_t format,
+    bool keep_format) {
+  return apply_tensor_with_format(sizes, src.options(), format, keep_format);
+}
+````
+
+## src-aclop-command-run
+
+**OpCommand::Run：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpCommand.cpp
+// 起始行：135
+
+void OpCommand::Run() {
+  // Check for npu graph
+  if (aclCmd->CheckCustomHandlerNull()) {
+    g_used_aclop = true;
+    // true aclop
+    at_npu::aclops::LazyInitAclops();
+    auto val = c10_npu::option::GetOption("jitCompile");
+    NPU_CHECK_ERROR(AclSetCompileopt(aclCompileOpt::ACL_OP_JIT_COMPILE, val->c_str()));
+    at_npu::aclops::LazyAclopSet::SetCompileopt();
+    c10_npu::assertNotCapturingAclop(aclCmd->GetName());
+  }
+
+  aclCmd->SetEnginePriority();
+  const string& op_name = aclCmd->GetName();
+#ifndef BUILD_LIBTORCH
+  const c10_npu::impl::PyCallbackTrigger* trigger = c10_npu::impl::NPUTrace::getTrace();
+#endif
+  auto stream = c10_npu::getCurrentNPUStream();
+  if (!stream.isSyncLaunchStream() && c10_npu::option::OptionsManager::GetTaskQueueEnable() && !sync) {
+    RECORD_FUNCTION(op_name, std::vector<c10::IValue>({}));
+#ifndef BUILD_LIBTORCH
+    at_npu::native::NpuUtils::ProfReportMarkDataToNpuProfiler(0, op_name);
+#endif
+    ExecuteParas execParams;
+    aclCmd->ExportParams(execParams);
+    c10_npu::queue::QueueParas params(c10_npu::queue::COMPILE_AND_EXECUTE, sizeof(ExecuteParas), &execParams);
+    c10_npu::enCurrentNPUStream(&params);
+#ifndef BUILD_LIBTORCH
+    at_npu::native::NpuUtils::ProfReportMarkDataToNpuProfiler(1, op_name, params.correlation_id);
+#endif
+    aclCmd->releaseSource(false);
+  } else {
+#ifndef BUILD_LIBTORCH
+    if (C10_UNLIKELY(trigger)) {
+      trigger->traceNpuAclStartExecution(op_name);
+    }
+#endif
+    aclCmd->Run(sync, sync_index, outputTensor);
+    if (c10_npu::option::OptionsManager::CheckBlockingEnable()) {
+      if (c10_npu::currentStreamCaptureStatusMayInitCtx() != c10_npu::CaptureStatus::Active) {
+        Sync();
+      }
+    }
+#ifndef BUILD_LIBTORCH
+    if (C10_UNLIKELY(trigger)) {
+      trigger->traceNpuAclFinishExecution(op_name);
+    }
+#endif
+    aclCmd->releaseSource();
+  }
+  aclCmds->Pop();
+}
+````
+
+## src-aclop-impl-run
+
+**旧接口直接执行：完整 OpCommandImpl::Run 与 InnerRun**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：247
+
+void OpCommandImpl::Run(
+    bool sync,
+    c10::SmallVector<int64_t, N>& sync_index,
+    c10::SmallVector<at::Tensor, N>& outputTensor) {
+  ASCEND_LOGD("Op %s Run.", opName.c_str());
+  RECORD_FUNCTION(opName, std::vector<c10::IValue>({}));
+#ifndef BUILD_LIBTORCH
+  if (PyGILState_Check() != 0) {
+    // we need to release GIL for NPU to compile op.
+    Py_BEGIN_ALLOW_THREADS;
+    ACL_REQUIRE_OK_OP(InnerRun(opName, execParam, sync, sync_index, outputTensor), opName.c_str());
+    Py_END_ALLOW_THREADS;
+  } else {
+    ACL_REQUIRE_OK_OP(InnerRun(opName, execParam, sync, sync_index, outputTensor), opName.c_str());
+  }
+#else
+  ACL_REQUIRE_OK_OP(InnerRun(opName, execParam, sync, sync_index, outputTensor), opName.c_str());
+#endif
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：284
+
+aclError OpCommandImpl::InnerRun(
+    const string& name,
+    AclExecParam& params,
+    bool sync,
+    c10::SmallVector<int64_t, N>& sync_index,
+    c10::SmallVector<at::Tensor, N>& outputTensor) {
+  aclError ret;
+  auto stream = c10_npu::getCurrentNPUStream();
+  if (stream.getRepoStopFlag()) {
+    ASCEND_LOGE("getRepoStopFlag in InnerRun, throw FORCE STOP.");
+    throw std::runtime_error("FORCE STOP." + PTA_ERROR(ErrCode::ACL));
+  }
+  auto inputSize = params.inBuffer.size();
+  auto outputSize = params.outBuffer.size();
+  // open the deterministicAlgorithms config
+  auto snapshot = c10_npu::CaptureDeterministicSnapshot();
+  return RunWithDeterministicSnapshot(snapshot, false, [&]() -> aclError {
+    bool reset_flag = false;
+    if (ForceJitCompileList::GetInstance().Inlist(name) && env::CheckJitDisable()) {
+      NPU_CHECK_ERROR(AclSetCompileopt(aclCompileOpt::ACL_OP_JIT_COMPILE, "enable"));
+      reset_flag = true;
+    }
+    int index = 0;
+    do {
+      if (params.customHandler) {
+        ret = params.customHandler();
+        OPS_CHECK_ERROR(ret, name.c_str());
+        index++;
+        continue;
+      }
+
+      if (at_npu::native::aoe::aoe_manager().IsAoeEnabled() && at_npu::native::aoe::aoe_manager().IsInWhitelist(name)) {
+        ret = at_npu::native::AclGenGraphAndDumpForOp(
+            name.c_str(),
+            inputSize,
+            params.inDesc.data(),
+            params.inBuffer.data(),
+            outputSize,
+            params.outDesc.data(),
+            params.outBuffer.data(),
+            params.attr,
+            ACL_ENGINE_SYS,
+            at_npu::native::aoe::aoe_manager().GetDumpGraphPath().c_str(),
+            nullptr);
+        if (ret != ACL_ERROR_NONE) {
+          CHECK_AND_THROW_ERROR_WITH_SPECIFIC_MESSAGE(ret);
+          C10_NPU_SHOW_ERR_MSG();
+          TORCH_CHECK(false, "In aoe mode, AclGenGraphAndDumpForOp failed!", PTA_ERROR(ErrCode::ACL));
+        }
+      }
+      if (!sync) {
+        ret = aclopCompileAndExecute(
+            name.c_str(),
+            inputSize,
+            params.inDesc.data(),
+            params.inBuffer.data(),
+            outputSize,
+            params.outDesc.data(),
+            params.outBuffer.data(),
+            params.attr,
+            ACL_ENGINE_SYS,
+            ACL_COMPILE_SYS,
+            nullptr,
+            stream);
+        OPS_CHECK_ERROR(ret, name.c_str());
+      } else {
+        int64_t dimSize;
+        ret = AclopCompileAndExecuteV2(
+            name.c_str(),
+            inputSize,
+            const_cast<aclTensorDesc**>(params.inDesc.data()),
+            const_cast<aclDataBuffer**>(params.inBuffer.data()),
+            outputSize,
+            const_cast<aclTensorDesc**>(params.outDesc.data()),
+            params.outBuffer.data(),
+            params.attr,
+            ACL_ENGINE_SYS,
+            ACL_COMPILE_SYS,
+            nullptr,
+            stream);
+        OPS_CHECK_ERROR(ret, name.c_str());
+        for (size_t i = 0; i < sync_index.size(); i++) {
+          c10::SmallVector<int64_t, N> real_shape;
+          for (int64_t j = 0; j < outputTensor[sync_index[i]].dim(); j++) {
+            NPU_CHECK_ERROR(aclGetTensorDescDimV2(params.outDesc[sync_index[i]], j, &dimSize));
+            real_shape.emplace_back(dimSize);
+          }
+          outputTensor[sync_index[i]].resize_(real_shape);
+        }
+      }
+      ++index;
+    } while (NpuUtils::IsOomError(ret, index) && (index < NPU_MAX_OP_EXEC_TRY_NUM));
+    if (reset_flag) {
+      NPU_CHECK_ERROR(AclSetCompileopt(aclCompileOpt::ACL_OP_JIT_COMPILE, "disable"));
+    }
+    return ret;
+  });
+}
+````
+
+## src-aclop-queued-exec
+
+**旧接口排队执行：完整 ExecFunc**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：440
+
+int ExecFunc(c10_npu::queue::QueueParas* in, aclrtStream stream) {
+  auto cur_paras = static_cast<ExecuteParas*>(in->paramVal);
+  ASCEND_LOGD("Op %s Run.", cur_paras->opType);
+  TORCH_NPU_DISPATCH_LOGD("ExecFunc: Op %s Run.", cur_paras->opType);
+  aclError ret;
+  // open the deterministicAlgorithms config
+  if (cur_paras->customHandler) {
+    ASCEND_LOGD("Exec Op %s with custom handle", cur_paras->opType);
+    try {
+      ret = cur_paras->customHandler();
+    } catch (std::exception& e) {
+      if (ContainsAny(
+              std::string(e.what()),
+              {DEVICE_TASK_ABORT,
+               DEVICE_TASK_ABORT_V2,
+               DEVICE_MEM_ERROR,
+               DEVICE_MEM_ERROR_V2,
+               DEVICE_HBM_ECC_ERROR,
+               DEVICE_HBM_ECC_ERROR_V2,
+               SUSPECT_DEVICE_MEM_ERROR,
+               SUSPECT_DEVICE_MEM_ERROR_V2,
+               HCCS_LINK_ERROR,
+               HCCS_LINK_ERROR_V2,
+               HCCS_LINK_ERROR_V3,
+               HCCL_OP_RETRY_FAILED,
+               HCCL_OP_RETRY_FAILED_V2,
+               SUSPECT_REMOTE_ERROR,
+               SUSPECT_REMOTE_ERROR_V2})) {
+        ret = c10_npu::acl::AclrtPeekAtLastError(ACL_RT_THREAD_LEVEL);
+      } else {
+        ret = ACL_ERROR_INVALID_PARAM;
+        LOG(ERROR) << e.what();
+      }
+      // Keep only 512 characters to avoid failure of copying and inability to
+      // print.
+      std::string errorMsg = std::string(e.what()).substr(0, 512);
+      ASCEND_LOGE("Custom hand error:%s", errorMsg.c_str());
+      TORCH_NPU_DISPATCH_LOGIL("ExecFunc: Op %s Run, Custom hand error:%s.", cur_paras->opType, e.what());
+    }
+    if (ret != ACL_ERROR_NONE) {
+      ASCEND_LOGE("Custom hand fail! name=%s, ret=%d", cur_paras->opType, ret);
+    }
+    TORCH_NPU_DISPATCH_LOGD("ExecFunc: Op %s Run with customHandler, ret = %d.", cur_paras->opType, ret);
+    return ret;
+  }
+  bool reset_flag = false;
+  if (!cur_paras->isJitDisable) {
+    NPU_CHECK_ERROR_WITHOUT_UCE(AclSetCompileopt(aclCompileOpt::ACL_OP_JIT_COMPILE, "enable"));
+    reset_flag = true;
+  }
+  if (at_npu::native::aoe::aoe_manager().IsAoeEnabled() &&
+      at_npu::native::aoe::aoe_manager().IsInWhitelist(cur_paras->opType)) {
+    ret = at_npu::native::AclGenGraphAndDumpForOp(
+        cur_paras->opType,
+        cur_paras->paras.input_num,
+        cur_paras->paras.input_desc,
+        cur_paras->paras.input_data_buf,
+        cur_paras->paras.output_num,
+        cur_paras->paras.output_desc,
+        cur_paras->paras.output_data_buf,
+        cur_paras->attr,
+        ACL_ENGINE_SYS,
+        at_npu::native::aoe::aoe_manager().GetDumpGraphPath().c_str(),
+        nullptr);
+    if (ret != ACL_ERROR_NONE) {
+      auto ret_temp = c10_npu::acl::AclrtPeekAtLastError(ACL_RT_THREAD_LEVEL);
+      if (ret_temp != ACL_ERROR_NONE) {
+        ret = ret_temp;
+      }
+      ASCEND_LOGE("In aoe mode, AclGenGraphAndDumpForOp failed!");
+      TORCH_NPU_DISPATCH_LOGD("ExecFunc: Op %s Run with AclGenGraphAndDumpForOp, ret = %d.", cur_paras->opType, ret);
+      return ret;
+    }
+  }
+  ret = aclopCompileAndExecute(
+      cur_paras->opType,
+      cur_paras->paras.input_num,
+      cur_paras->paras.input_desc,
+      cur_paras->paras.input_data_buf,
+      cur_paras->paras.output_num,
+      cur_paras->paras.output_desc,
+      cur_paras->paras.output_data_buf,
+      cur_paras->attr,
+      ACL_ENGINE_SYS,
+      ACL_COMPILE_SYS,
+      nullptr,
+      stream);
+  if (reset_flag) {
+    NPU_CHECK_ERROR_WITHOUT_UCE(AclSetCompileopt(aclCompileOpt::ACL_OP_JIT_COMPILE, "disable"));
+  }
+
+  if (ret != ACL_ERROR_NONE) {
+    auto ret_temp = c10_npu::acl::AclrtPeekAtLastError(ACL_RT_THREAD_LEVEL);
+    if (ret_temp != ACL_ERROR_NONE) {
+      ret = ret_temp;
+    }
+    printErrorLog(cur_paras);
+  }
+
+  TORCH_NPU_DISPATCH_LOGD("ExecFunc: Op %s Run with aclopCompileAndExecute, ret = %d.", cur_paras->opType, ret);
+  return ret;
+}
+````
+
+## src-opapi-submit-types
+
+**RunOpApiV2 的完整声明与 PROC_FUNC 类型别名**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpCommand.h
+// 起始行：136
+
+  static void RunOpApiV2(const string& op_name, const PROC_FUNC& func, bool sync = false);
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.h
+// 起始行：194
+
+using PROC_FUNC = std::function<int()>;
+````
+
+## src-opapi-queue-copy
+
+**队列保存回调：完整请求结构体、CopyFunc 与 Copy**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/NPUDefine.h
+// 起始行：77
+
+struct ExecuteParasOpApiV2 {
+  using PROCESS_FUNC = std::function<int()>;
+  std::string* opName;
+  PROCESS_FUNC* customHandler;
+  ExecuteParasOpApiV2() = default;
+};
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/NPUDefine.h
+// 起始行：84
+
+struct ExecuteParasOpApi {
+  using PROCESS_FUNC = std::function<int()>;
+  char opType[100]{};
+  PROCESS_FUNC customHandler;
+  ExecuteParasOpApi() = default;
+  void Release();
+  void Copy(ExecuteParasOpApi& other);
+  void Copy(ExecuteParasOpApiV2& other);
+};
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：690
+
+void CopyFunc(void* dst, void* src) {
+  auto dstPtr = static_cast<c10_npu::queue::QueueParas*>(dst);
+  auto srcPtr = static_cast<c10_npu::queue::QueueParas*>(src);
+  dstPtr->paramVal = static_cast<uint8_t*>(dst) + sizeof(c10_npu::queue::QueueParas);
+  if (dstPtr->paramType == c10_npu::queue::EXECUTE_OPAPI) {
+    // string or smallvector of struct is used, deconstructor need be called
+    // before memset
+    (static_cast<ExecuteParasOpApi*>(dstPtr->paramVal))->~ExecuteParasOpApi();
+  } else if (dstPtr->paramType == c10_npu::queue::COMPILE_AND_EXECUTE) {
+    // string or smallvector of struct is used, deconstructor need be called
+    // before memset
+    (static_cast<ExecuteParas*>(dstPtr->paramVal))->~ExecuteParas();
+  }
+
+  const bool is_opapi_v2 = (srcPtr->paramType == c10_npu::queue::EXECUTE_OPAPI_V2);
+  dstPtr->paramStream = srcPtr->paramStream;
+  if (is_opapi_v2) {
+    dstPtr->paramType = c10_npu::queue::EXECUTE_OPAPI;
+  } else {
+    dstPtr->paramType = srcPtr->paramType;
+  }
+  dstPtr->paramLen = srcPtr->paramLen;
+  dstPtr->correlation_id = srcPtr->correlation_id;
+  if (dstPtr->paramType == c10_npu::queue::EXECUTE_OPAPI) {
+    new (dstPtr->paramVal) ExecuteParasOpApi();
+    if (is_opapi_v2) {
+      (static_cast<ExecuteParasOpApi*>(dstPtr->paramVal))->Copy(*(static_cast<ExecuteParasOpApiV2*>(srcPtr->paramVal)));
+    } else {
+      (static_cast<ExecuteParasOpApi*>(dstPtr->paramVal))->Copy(*(static_cast<ExecuteParasOpApi*>(srcPtr->paramVal)));
+    }
+  } else if (srcPtr->paramType == c10_npu::queue::COMPILE_AND_EXECUTE) {
+    new (dstPtr->paramVal) ExecuteParas();
+    (static_cast<ExecuteParas*>(dstPtr->paramVal))->Copy(*(static_cast<ExecuteParas*>(srcPtr->paramVal)));
+  } else if ((srcPtr->paramType == c10_npu::queue::ASYNC_MEMCPY)) {
+    new (dstPtr->paramVal) c10_npu::queue::CopyParas();
+    (static_cast<c10_npu::queue::CopyParas*>(dstPtr->paramVal))
+        ->Copy(*(static_cast<c10_npu::queue::CopyParas*>(srcPtr->paramVal)));
+  } else {
+    new (dstPtr->paramVal) c10_npu::queue::EventParas();
+    (static_cast<c10_npu::queue::EventParas*>(dstPtr->paramVal))
+        ->Copy(*(static_cast<c10_npu::queue::EventParas*>(srcPtr->paramVal)));
+  }
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/NPUDefine.cpp
+// 起始行：48
+
+void ExecuteParasOpApi::Copy(ExecuteParasOpApiV2& other) {
+  static const auto max_len = sizeof(ExecuteParasOpApi::opType);
+  auto len = other.opName->length();
+  if (len + 1 < max_len) {
+    other.opName->copy(this->opType, len + 1);
+  } else {
+    other.opName->copy(this->opType, max_len - 1);
+  }
+  this->customHandler = std::move(*(other.customHandler));
+}
+````
+
+## src-opapi-queue-dispatch
+
+**队列执行入口：完整 funcMap 与 AsncExecFunc**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：816
+
+using Func = int (*)(c10_npu::queue::QueueParas*, aclrtStream);
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：817
+
+using AsyncFuncMap = std::map<c10_npu::queue::QueueParamType, Func>;
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：818
+
+AsyncFuncMap funcMap = {
+    {c10_npu::queue::COMPILE_AND_EXECUTE, ExecFunc},
+    {c10_npu::queue::EXECUTE_OPAPI, ExecFuncOpApi},
+    {c10_npu::queue::ASYNC_MEMCPY, MemcopyAsyncFunc},
+    {c10_npu::queue::RECORD_EVENT, RecordEventFunc},
+    {c10_npu::queue::WAIT_EVENT, WaitEventFunc},
+    {c10_npu::queue::LAZY_DESTROY_EVENT, LazyDestroyEventFunc},
+    {c10_npu::queue::WRITE_VALUE, ValueWriteFunc},
+    {c10_npu::queue::WAIT_VALUE, ValueWaitResetFunc},
+};
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：829
+
+int AsncExecFunc(void* data) {
+  auto queueParam = static_cast<c10_npu::queue::QueueParas*>(data);
+  auto type = queueParam->paramType;
+  aclrtStream stream = queueParam->paramStream;
+  auto ret = funcMap[type](queueParam, stream);
+  return ret;
+}
+````
+
+## src-opapi-queue-exec
+
+**队列调用回调：完整 ExecFuncOpApi**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：543
+
+int ExecFuncOpApi(c10_npu::queue::QueueParas* in, aclrtStream stream) {
+  auto cur_paras = static_cast<ExecuteParasOpApi*>(in->paramVal);
+  ASCEND_LOGD("Op %s Run.", cur_paras->opType);
+  TORCH_NPU_DISPATCH_LOGD("ExecFuncOpApi: Op %s Run.", cur_paras->opType);
+  aclError ret;
+
+  ASCEND_LOGD("Exec Op %s with custom handle", cur_paras->opType);
+
+  if (cur_paras->customHandler == nullptr) {
+    ASCEND_LOGW("Custom hand is nullptr! name=%s", cur_paras->opType);
+    TORCH_NPU_DISPATCH_LOGI("ExecFuncOpApi: Op %s Run, custom hand is nullptr.", cur_paras->opType);
+    return ACL_ERROR_NONE;
+  }
+
+  try {
+    ret = cur_paras->customHandler();
+  } catch (std::exception& e) {
+    if (ContainsAny(
+            std::string(e.what()),
+            {DEVICE_TASK_ABORT,
+             DEVICE_TASK_ABORT_V2,
+             DEVICE_MEM_ERROR,
+             DEVICE_MEM_ERROR_V2,
+             DEVICE_HBM_ECC_ERROR,
+             DEVICE_HBM_ECC_ERROR_V2,
+             SUSPECT_DEVICE_MEM_ERROR,
+             SUSPECT_DEVICE_MEM_ERROR_V2,
+             HCCS_LINK_ERROR,
+             HCCS_LINK_ERROR_V2,
+             HCCS_LINK_ERROR_V3,
+             HCCL_OP_RETRY_FAILED,
+             HCCL_OP_RETRY_FAILED_V2,
+             SUSPECT_REMOTE_ERROR,
+             SUSPECT_REMOTE_ERROR_V2})) {
+      ret = c10_npu::acl::AclrtPeekAtLastError(ACL_RT_THREAD_LEVEL);
+    } else {
+      ret = ACL_ERROR_INVALID_PARAM;
+      LOG(ERROR) << e.what();
+    }
+    // Keep only 512 characters to avoid failure of copying and inability to
+    // print.
+    std::string errorMsg = std::string(e.what()).substr(0, 512);
+    ASCEND_LOGE("Custom hand error:%s", errorMsg.c_str());
+    TORCH_NPU_DISPATCH_LOGIL("ExecFuncOpApi: Op %s Run, Custom hand error:%s.", cur_paras->opType, e.what());
+  }
+  if (ret != ACL_ERROR_NONE) {
+    ASCEND_LOGE("Custom hand fail! name=%s, ret=%d", cur_paras->opType, ret);
+  }
+  TORCH_NPU_DISPATCH_LOGD("ExecFuncOpApi: Op %s Run, ret = %d.", cur_paras->opType, ret);
+  return ret;
+}
+````
+
+## src-execution-snapshot
+
+**RunWithDeterministicSnapshot：完整模板函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：160
+
+template <typename LaunchFunc>
+aclError RunWithDeterministicSnapshot(
+    const c10_npu::DeterministicSnapshot& snapshot,
+    bool isOpapi,
+    LaunchFunc&& launch) {
+  ApplyDeterministicSnapshot(snapshot, isOpapi);
+  return launch();
+}
+````
+
+## src-queue-en-current
+
+**enCurrentNPUStream：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUStream.cpp
+// 起始行：772
+
+void enCurrentNPUStream(void* cur_paras, c10::DeviceIndex device_index, NPUStream* task_stream) {
+  initNPUStreamsOnce();
+  if (device_index == -1) {
+    device_index = current_device();
+  }
+  check_npu(device_index);
+  c10_npu::queue::QueueParas* queueParam = static_cast<c10_npu::queue::QueueParas*>(cur_paras);
+  queueParam->correlation_id = c10_npu::queue::QueueParas::g_correlation_id++;
+  queueParam->paramStream = current_streams[device_index]->stream;
+  if (c10_npu::option::OptionsManager::GetPerStreamQueue()) {
+    LeakyStreamInternals* ptr = current_streams[device_index];
+    if (task_stream != nullptr) {
+      // Check before traversing the external_streams
+      TORCH_CHECK(
+          !isExternalStreamId(task_stream->id()),
+          "External NPU stream is not supported by task queue enqueue.",
+          PTA_ERROR(ErrCode::NOT_SUPPORT));
+      ptr = NPUStream_internals(*task_stream);
+    }
+    TORCH_CHECK(
+        !isExternalStreamId(static_cast<c10::StreamId>(ptr->stream_id)),
+        "External NPU stream is not supported by task queue enqueue.",
+        PTA_ERROR(ErrCode::NOT_SUPPORT));
+    // To prevent all taskqueue threads from being created during stream
+    // initialization, we initialize the taskqueue when enqueueing each stream
+    // init repo once
+    if (!ptr->repo->CheckInit()) {
+      std::lock_guard<std::mutex> lock(init_repo_mutex_);
+      if (!ptr->repo->CheckInit()) {
+        ptr->repo->InitRepo(device_index);
+      }
+    }
+    ptr->repo->Enqueue(cur_paras);
+    if (ptr->repo->GetStatus() == RepoStatus::INIT) {
+      ptr->repo->MakeSureQueueEmpty();
+      ptr->repo->ChangeStatus(RepoStatus::INIT, RepoStatus::RUN);
+    }
+  } else {
+    default_streams[device_index].repo->Enqueue(cur_paras);
+    if (default_streams[device_index].repo->GetStatus() == RepoStatus::INIT) {
+      default_streams[device_index].repo->MakeSureQueueEmpty();
+      default_streams[device_index].repo->ChangeStatus(RepoStatus::INIT, RepoStatus::RUN);
+    }
+  }
+}
+````
+
+## src-queue-enqueue
+
+**Repository::Enqueue：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：567
+
+void Repository::Enqueue(void* cur_paras) {
+  if (initialized == false) {
+    ASCEND_LOGE("Task queue is not initialized, shouldn't call Enqueue(). !!");
+    return;
+  }
+
+  TORCH_NPU_QUEUE_LOGD(
+      "Enqueue: start, %s, device = %d, write_idx = %u, read_idx = %u, status = %d",
+      get_func_error_msg(cur_paras).c_str(),
+      device_idx,
+      write_idx.idx,
+      read_idx.idx,
+      GetStatus());
+
+  const RepoStatus current_status = GetStatus();
+  ThrowDeviceError(current_status, cur_paras);
+
+  if (current_status == RepoStatus::CAN_EXIT) {
+    ASCEND_LOGE("Inner error happened with CAN_EXIT status, detail: %s", repo_error.c_str());
+  }
+
+  if (current_status == RepoStatus::ERROR_EXIT) {
+    // Avoid repeatedly throwing exceptions
+    SetStatus(CAN_EXIT);
+
+    auto retmsg = std::string(
+        "The Inner error is reported as above. "
+        "The process exits for this inner error, and " +
+        repo_error + ".\n" +
+        "Since the operator is called asynchronously, the stacktrace may be inaccurate. "
+        "If you want to get the accurate stacktrace, "
+        "please set the environment variable ASCEND_LAUNCH_BLOCKING=1.\n" +
+        "Note: ASCEND_LAUNCH_BLOCKING=1 will force ops to run in synchronous mode, "
+        "resulting in performance degradation. "
+        "Please unset ASCEND_LAUNCH_BLOCKING in time after debugging." +
+        PTA_ERROR(ErrCode::ACL) + ".\n" + acl_error);
+
+    auto errmsg = GetQueueErrMsg();
+    if (isCannOOM(errmsg)) {
+      if (c10_npu::option::OptionsManager::IsOomSnapshotEnable()) {
+        c10_npu::option::oom_observer();
+      }
+      ASCEND_LOGE("%s", retmsg.c_str());
+      TORCH_CHECK_WITH(OutOfMemoryError, false, retmsg.c_str());
+    }
+    throw std::runtime_error(retmsg);
+  }
+
+  if (current_status != RUN && current_status != INIT) {
+    auto queueParam = static_cast<c10_npu::queue::QueueParas*>(cur_paras);
+    auto type = queueParam->paramType;
+    if (type == c10_npu::queue::EXECUTE_OPAPI) {
+      auto cur_paras = static_cast<at_npu::native::ExecuteParasOpApi*>(queueParam->paramVal);
+      auto op_name = cur_paras->opType;
+      ASCEND_LOGE("Task queue thread is exit, can't call Enqueue() for executing and op name is=%s.", op_name);
+    } else if (type == c10_npu::queue::EXECUTE_OPAPI_V2) {
+      auto cur_paras = static_cast<at_npu::native::ExecuteParasOpApiV2*>(queueParam->paramVal);
+      auto op_name = cur_paras->opName;
+      ASCEND_LOGE("Task queue thread is exit, can't call Enqueue() for executing and op name is=%s.", op_name->c_str());
+    } else if (type == c10_npu::queue::COMPILE_AND_EXECUTE) {
+      auto cur_paras = static_cast<at_npu::native::ExecuteParas*>(queueParam->paramVal);
+      auto op_name = cur_paras->opType;
+      ASCEND_LOGW("Task queue thread is exit, can't call Enqueue() for executing and op name is=%s.", op_name);
+    } else if (type == c10_npu::queue::ASYNC_MEMCPY) {
+      auto cur_paras = static_cast<c10_npu::queue::CopyParas*>(queueParam->paramVal);
+      ASCEND_LOGW(
+          "Task queue thread is exit, can't call Enqueue() for copy, srclen=%zu, dstlen is %zu, kind=%d",
+          cur_paras->srcLen,
+          cur_paras->dstLen,
+          cur_paras->kind);
+    } else {
+      auto cur_paras = static_cast<c10_npu::queue::EventParas*>(queueParam->paramVal);
+      ASCEND_LOGW("Task queue thread is exit, can't call Enqueue() for event, event is=%p", cur_paras->event);
+    }
+    return;
+  }
+
+  if (lazy_fusion::IsEnabled()) {
+    auto type = static_cast<c10_npu::queue::QueueParas*>(cur_paras)->paramType;
+    // LAZY_DESTROY_EVENT may execute in a separate thread, parallel with
+    // forward and backward threads.
+    if (type != c10_npu::queue::LAZY_DESTROY_EVENT) {
+      lazy_fusion::LazyFusionFlush();
+    }
+  }
+
+  bool ret = false;
+  ssize_t s;
+  uint64_t u = 1;
+
+  SetWriteWorking(true);
+  while (!ret && (GetStatus() == RUN || GetStatus() == INIT)) {
+    ret = WriteQueue(cur_paras);
+    if (ret == false) {
+      SetWriteWorking(false);
+      __sync_synchronize();
+      if (IsFullQueue()) {
+        TORCH_NPU_QUEUE_LOGI(
+            "Enqueue: taskqueue is full, wait for efd_write, device = %d, write_idx = %u, read_idx = %u, status = %d",
+            device_idx,
+            write_idx.idx,
+            read_idx.idx,
+            GetStatus());
+#ifndef BUILD_LIBTORCH
+        // double check the current thread hold a Gil lock
+        // and release the GIL to TE op compiler in case the acl thread
+        // deadlock. However, this operator could produce another form of
+        // deadlock. When thread A deconstruct a tensor, it will hold the mutex
+        // of deviceCachingAllocator and insert an event into the taskqueue. If
+        // the taskqueue is full, thread A will run into here and release the
+        // GIL. Once another thread B get GIL and trigger GC, it may deconstruct
+        // another tensor and try to get deviceCachingAllocator's mutex, which
+        // would cause another form of deadlock. Since the aclop will be
+        // deprecated soon, we just add a using-aclop check here to avoid the
+        // second case of deadlock.
+        if (PyGILState_Check() != 0 && g_used_aclop) {
+          Py_BEGIN_ALLOW_THREADS s = eventfd_read(efd_write, &u);
+          Py_END_ALLOW_THREADS
+        } else {
+          s = eventfd_read(efd_write, &u);
+        }
+#else
+        s = eventfd_read(efd_write, &u);
+#endif
+        TORCH_NPU_QUEUE_LOGI(
+            "Enqueue: taskqueue is full, wait for efd_write end, device = %d, write_idx = %u, read_idx = %u, status = %d, s = %d",
+            device_idx,
+            write_idx.idx,
+            read_idx.idx,
+            GetStatus(),
+            s);
+        if (s != 0) {
+          if (errno == EINTR) {
+            continue;
+          }
+          ASCEND_LOGE("waiting dequeue failed. s=%zd, errno=%s.", s, strerror(errno));
+          return;
+        }
+        SetWriteWorking(true);
+      }
+      continue;
+    }
+    __sync_synchronize();
+    while (!IsReadWorking()) {
+      s = eventfd_write(efd_read, u);
+      if (s != 0) {
+        if (errno == EINTR) {
+          continue;
+        }
+        ASCEND_LOGE("notify consumer failed!! s=%zd, errno=%s", s, strerror(errno));
+        return;
+      }
+      break;
+    }
+  }
+  SetWriteWorking(false);
+}
+````
+
+## src-queue-write
+
+**Repository::WriteQueue：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：364
+
+bool Repository::WriteQueue(void* cur_paras) {
+  std::lock_guard<std::mutex> lock(mu_enqueue);
+
+  const RepoStatus current_status = GetStatus();
+  ThrowDeviceError(current_status, cur_paras);
+
+  if (IsFullQueue()) {
+    TORCH_NPU_QUEUE_LOGI(
+        "WriteQueue: taskqueue is full, device = %d, write_idx = %u, read_idx = %u, status = %d",
+        device_idx,
+        write_idx.idx,
+        read_idx.idx,
+        GetStatus());
+    return false;
+  }
+
+  __sync_synchronize();
+  manager().Copy(data, write_idx.idx, cur_paras);
+  __sync_synchronize();
+
+  TORCH_NPU_QUEUE_LOGD(
+      "WriteQueue: write success, %s, device = %d, write_idx = %u, read_idx = %u, status = %d",
+      get_func_error_msg(cur_paras).c_str(),
+      device_idx,
+      write_idx.idx,
+      read_idx.idx,
+      GetStatus());
+  write_idx.idx = (write_idx.idx + 1) & (kQueueCapacity - 1);
+  return true;
+}
+````
+
+## src-queue-callback-manager
+
+**CallBackManager 与 manager：完整定义**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：30
+
+class CallBackManager {
+ public:
+  CallBackManager() {}
+  ~CallBackManager() {}
+  void SetExec(const ACL_EXEC_FUNC& func) {
+    this->execFunc = func;
+  }
+
+  void SetCopy(const ACL_COPY_FUNC& func) {
+    this->copyFunc = func;
+  }
+
+  void SetRelease(const ACL_RELEASE_FUNC& func) {
+    this->releaseFunc = func;
+  }
+
+  void SetCopyReleaseParam(const ACL_COPY_RELEASE_PARM_FUNC& func) {
+    this->copyReleaseParamFunc = func;
+  }
+
+  void SetReleaseParam(const ACL_RELEASE_PARAM_FUNC& func) {
+    this->releaseParamFunc = func;
+  }
+
+  void SetNew(const ACL_NEW_FUNC& func) {
+    this->newFunc = func;
+  }
+
+  void SetDelete(const ACL_DELETE_FUNC& func) {
+    this->deleteFunc = func;
+  }
+
+  void* getCurrentParams(void* head, int offset) {
+    return (uint8_t*)head + sizePerParams * offset;
+  }
+
+  int Call(void* head, int offset) {
+    TORCH_CHECK(this->execFunc, "Failed to find execution function.", PTA_ERROR(ErrCode::NOT_FOUND));
+    auto dstPtr = (uint8_t*)head + sizePerParams * offset;
+    return this->execFunc(dstPtr);
+  }
+
+  void Copy(void* dstHead, int offset, void* src) {
+    TORCH_CHECK(this->copyFunc, "Failed to find copy function.", PTA_ERROR(ErrCode::NOT_FOUND));
+    auto dstPtr = (uint8_t*)dstHead + sizePerParams * offset;
+    return this->copyFunc(dstPtr, src);
+  }
+
+  void Release(void* head, int offset, ReleaseQueue& releaseQueue) {
+    TORCH_CHECK(this->releaseFunc, "Failed to find release function.", PTA_ERROR(ErrCode::NOT_FOUND));
+    auto ptr = (uint8_t*)head + sizePerParams * offset;
+    return this->releaseFunc(ptr, releaseQueue);
+  }
+
+  void CopyRealseParam(void* dstHead, int offset, void* src) {
+    TORCH_CHECK(
+        this->copyReleaseParamFunc, "Failed to find copy release params function.", PTA_ERROR(ErrCode::NOT_FOUND));
+    auto dstPtr = (uint8_t*)dstHead + sizePerParams * offset;
+    return this->copyReleaseParamFunc(dstPtr, src);
+  }
+
+  void ReleaseParam(void* head, int offset) {
+    TORCH_CHECK(this->releaseParamFunc, "Failed to find release params function.", PTA_ERROR(ErrCode::NOT_FOUND));
+    auto ptr = (uint8_t*)head + sizePerParams * offset;
+    return this->releaseParamFunc(ptr);
+  }
+
+  void* Init(int capacity) {
+    TORCH_CHECK(this->newFunc, "Failed to find new function.", PTA_ERROR(ErrCode::NOT_FOUND));
+    void* ptr = this->newFunc(capacity, sizePerParams); // not check as CUDA
+    return ptr;
+  }
+
+  void DeInit(void* ptr) {
+    if (ptr != nullptr) {
+      TORCH_CHECK(this->deleteFunc, "Failed to find delete function.", PTA_ERROR(ErrCode::NOT_FOUND));
+      this->deleteFunc(ptr);
+      ptr = nullptr;
+    }
+  }
+
+ private:
+  int sizePerParams = 0;
+  ACL_EXEC_FUNC execFunc = nullptr;
+  ACL_COPY_FUNC copyFunc = nullptr;
+  ACL_RELEASE_FUNC releaseFunc = nullptr;
+  ACL_NEW_FUNC newFunc = nullptr;
+  ACL_DELETE_FUNC deleteFunc = nullptr;
+  ACL_COPY_RELEASE_PARM_FUNC copyReleaseParamFunc = nullptr;
+  ACL_RELEASE_PARAM_FUNC releaseParamFunc = nullptr;
+}; // class CallBackManager
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：122
+
+CallBackManager& manager() {
+  static CallBackManager instance;
+  return instance;
+}
+````
+
+## src-queue-callback-registration
+
+**队列回调注册：完整宏、注册语句与构造函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.h
+// 起始行：215
+
+#define REGISTER_QUEUE_FUNC(execF, copyF, releaseF, newF, deleteF, copyReleaseParamF, releaseParamF) \
+  static ::c10_npu::register_queue_cb::NPUCallBackRegisterBuilder register_queue_func_builder(       \
+      execF, copyF, releaseF, newF, deleteF, copyReleaseParamF, releaseParamF);
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.cpp
+// 起始行：863
+
+REGISTER_QUEUE_FUNC(AsncExecFunc, CopyFunc, ReleaseFunc, NewFunc, DeleteFunc, CopyReleaseParamFunc, ReleaseParamFunc)
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：134
+
+NPUCallBackRegisterBuilder::NPUCallBackRegisterBuilder(
+    const ACL_EXEC_FUNC& execFunc,
+    const ACL_COPY_FUNC& copyFunc,
+    const ACL_RELEASE_FUNC& releaseFunc,
+    const ACL_NEW_FUNC& newFunc,
+    const ACL_DELETE_FUNC& deleteFunc,
+    const ACL_COPY_RELEASE_PARM_FUNC& copyReleaseParamF,
+    const ACL_RELEASE_PARAM_FUNC& releaseParamF) {
+  manager().SetExec(execFunc);
+  manager().SetCopy(copyFunc);
+  manager().SetRelease(releaseFunc);
+  manager().SetNew(newFunc);
+  manager().SetDelete(deleteFunc);
+  releaseManager().SetCopyReleaseParam(copyReleaseParamF);
+  releaseManager().SetReleaseParam(releaseParamF);
+  releaseManager().SetNew(newFunc);
+  releaseManager().SetDelete(deleteFunc);
+}
+````
+
+## src-queue-init
+
+**Repository::InitRepo：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：883
+
+void Repository::InitRepo(c10::DeviceIndex device_id) {
+  if (data == nullptr) {
+    data = manager().Init(kQueueCapacity);
+    ASCEND_LOGI("TaskQueue is enable");
+  }
+
+  efd_read = eventfd(0, 0);
+  efd_write = eventfd(0, 0);
+  efd_empty = eventfd(0, 0);
+
+  initialized = true;
+  SetStatus(INIT);
+  device_idx = device_id;
+  releaseQueue.InitReleaseQueue(device_id);
+  std::thread cur_consumer(StartConsume, this, device_id);
+  consumer = std::move(cur_consumer);
+}
+````
+
+## src-queue-consume
+
+**StartConsume：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：867
+
+void StartConsume(Repository* repo, c10::DeviceIndex device_id) {
+  SetThreadType(ThreadType::ACL_THREAD);
+  SetThreadAffinity(device_id);
+
+  aclError ret = c10_npu::SetDevice(device_id);
+  if (ret != 0) {
+    C10_NPU_SHOW_ERR_MSG();
+    ASCEND_LOGE("***Thread*%d: set device (%d): ret = %d", std::this_thread::get_id(), device_id, ret);
+  }
+
+  while (repo->GetStatus() != RepoStatus::CAN_EXIT and repo->GetStatus() != RepoStatus::ERROR_EXIT) {
+    repo->Dequeue();
+  }
+  return;
+}
+````
+
+## src-queue-dequeue
+
+**Repository::Dequeue：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：725
+
+void Repository::Dequeue() {
+  if (initialized == false) {
+    ASCEND_LOGE("Task queue is not initialized, shouldn't call Dequeue(). !!");
+    return;
+  }
+
+  bool ret = false;
+  bool notify_empty = false;
+  ssize_t s;
+  uint64_t u = 1;
+
+  SetReadWorking(true);
+  while (ret == false && GetStatus() != RepoStatus::CAN_EXIT) {
+    if (deviceErrorMap.find(GetStatus()) != deviceErrorMap.end()) {
+      ClearQueue();
+      c10_npu::NPUEventManager::GetInstance().ClearUnrecordedCount();
+      std::this_thread::sleep_for(std::chrono::microseconds(1000));
+      continue;
+    }
+    ret = ReadQueue();
+    if (ret == false) {
+      if (GetStatus() == RepoStatus::NEED_EXIT) {
+        ChangeStatus(NEED_EXIT, CAN_EXIT);
+        break;
+      }
+
+      if (GetStatus() == RepoStatus::ERROR_EXIT) {
+        break;
+      }
+
+      if (GetStatus() == RepoStatus::STOP_EXIT) {
+        continue;
+      }
+
+      SetReadWorking(false);
+      __sync_synchronize();
+      if (IsEmptyQueue()) {
+        TORCH_NPU_QUEUE_LOGI(
+            "Dequeue: taskqueue is empty, wait for efd_read, device = %d, write_idx = %u, read_idx = %u, status = %d",
+            device_idx,
+            write_idx.idx,
+            read_idx.idx,
+            GetStatus());
+        s = eventfd_read(efd_read, &u);
+        TORCH_NPU_QUEUE_LOGI(
+            "Dequeue: taskqueue is empty, wait for efd_read end, device = %d, write_idx = %u, read_idx = %u, status = %d, s = %d",
+            device_idx,
+            write_idx.idx,
+            read_idx.idx,
+            GetStatus(),
+            s);
+        if (s != 0) {
+          if (errno == EINTR) {
+            continue;
+          }
+          ASCEND_LOGE("waiting enqueue failed. s=%zd, errno=%s.", s, strerror(errno));
+          return;
+        }
+        SetReadWorking(true);
+      }
+      continue;
+    }
+    __sync_synchronize();
+    notify_empty = need_empty && IsEmptyQueue(); // need_empty && (ret == false || IsEmptyQueue());
+    while (notify_empty) {
+      s = eventfd_write(efd_empty, u);
+      if (s != 0) {
+        if (errno == EINTR) {
+          continue;
+        }
+        ASCEND_LOGE("notify make_sure failed. s=%zd, errno=%s.", s, strerror(errno));
+        return;
+      }
+      break;
+    }
+    __sync_synchronize();
+    while (!IsWriteWorking()) {
+      s = eventfd_write(efd_write, u);
+      if (s != 0) {
+        if (errno == EINTR) {
+          continue;
+        }
+        ASCEND_LOGE("notify producer failed. s=%zd, errno=%s.", s, strerror(errno));
+        return;
+      }
+      break;
+    }
+  }
+  SetReadWorking(false);
+}
+````
+
+## src-queue-read
+
+**Repository::ReadQueue：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUQueue.cpp
+// 起始行：436
+
+bool Repository::ReadQueue() {
+  if (IsEmptyQueue()) {
+    const auto task_queue_enable = c10_npu::option::OptionsManager::GetTaskQueueEnable();
+    if (task_queue_enable == 2) {
+      // read queue polls for at most 1 ms when queue is empty.
+      for (int i = 0; i < READ_QUEUE_POLL_MAX_LOOP; ++i) {
+        if (!IsEmptyQueue()) {
+          break;
+        }
+      }
+      if (IsEmptyQueue()) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  __sync_synchronize();
+#ifndef BUILD_LIBTORCH
+  at_npu::native::NpuUtils::ProfReportMarkDataToNpuProfiler(2, data, read_idx.idx);
+  auto ret = manager().Call(data, read_idx.idx);
+  at_npu::native::NpuUtils::ProfReportMarkDataToNpuProfiler(3, data, read_idx.idx);
+#else
+  auto ret = manager().Call(data, read_idx.idx);
+#endif
+  if (ret != 0) {
+    repo_error = get_func_error_msg(manager().getCurrentParams(data, read_idx.idx));
+    ASCEND_LOGE(
+        "---Thread---%llu: device = %d, write_idx = %u, read_idx = %u, status = %d, ret = %d",
+        std::this_thread::get_id(),
+        device_idx,
+        write_idx.idx,
+        read_idx.idx,
+        GetStatus(),
+        ret);
+    TORCH_NPU_QUEUE_LOGI(
+        "ReadQueue: read failed, %s, device = %d, write_idx = %u, read_idx = %u, status = %d, ret = %d",
+        repo_error.c_str(),
+        device_idx,
+        write_idx.idx,
+        read_idx.idx,
+        GetStatus(),
+        ret);
+    while (!IsEmptyQueue()) { // ignore other tasks
+      manager().Release(data, read_idx.idx, releaseQueue);
+      read_idx.idx = (read_idx.idx + 1) & (kQueueCapacity - 1);
+    }
+    std::string err_msg;
+    CheckDeviceError(ret, err_msg);
+    if (!err_msg.empty()) {
+      repo_error = repo_error + ". Other error information exists:" + err_msg;
+    }
+    ClearQueue();
+    c10_npu::NPUEventManager::GetInstance().ClearUnrecordedCount();
+    if (GetStatus() == RepoStatus::STOP_EXIT) {
+      // The "stop_device" function will first set the "FORCE STOP" state, and
+      // then call the "devicetaskabort" interface. In a theoretical scenario,
+      // it is possible that before setting the FORCE STOP state, the dequeue
+      // thread had already got a task and was preparing to dispatch it. After
+      // calling the "devicetaskabort" interface, the task was finally ready to
+      // be dispatched. At this point, if the execution of this task fails,
+      // there will be an error state in the device, and it needs to be handled
+      // through the synchronization interface.
+      auto acl_ret = c10_npu::acl::AclrtSynchronizeDeviceWithTimeout();
+      ASCEND_LOGI(
+          "ReadQueue: SynchronizeDevice with FORCE STOP, device = %d, write_idx = %u, read_idx = %u, status = %d, ret = %d, acl_ret = %d",
+          device_idx,
+          write_idx.idx,
+          read_idx.idx,
+          GetStatus(),
+          ret,
+          acl_ret);
+    }
+    return false;
+  }
+
+  manager().Release(data, read_idx.idx, releaseQueue);
+  __sync_synchronize();
+
+  TORCH_NPU_QUEUE_LOGD(
+      "ReadQueue: read success, %s, device = %d, write_idx = %u, read_idx = %u, status = %d",
+      get_func_error_msg(manager().getCurrentParams(data, read_idx.idx)).c_str(),
+      device_idx,
+      write_idx.idx,
+      read_idx.idx,
+      GetStatus());
+  read_idx.idx = (read_idx.idx + 1) & (kQueueCapacity - 1);
+
+  if (GetStatus() == RepoStatus::STOP_EXIT) {
+    // The "stop_device" function will first set the "FORCE STOP" state, and
+    // then call the "devicetaskabort" interface. In a theoretical scenario, it
+    // is possible that before setting the FORCE STOP state, the dequeue thread
+    // had already got a task and was preparing to dispatch it. After calling
+    // the "devicetaskabort" interface, the task was finally ready to be
+    // dispatched. At this point, if the execution of this task fails, there
+    // will be an error state in the device, and it needs to be handled through
+    // the synchronization interface.
+    auto acl_ret = c10_npu::acl::AclrtSynchronizeDeviceWithTimeout();
+    ASCEND_LOGI(
+        "ReadQueue: SynchronizeDevice with FORCE STOP, device = %d, write_idx = %u, read_idx = %u, status = %d, ret = %d, acl_ret = %d",
+        device_idx,
+        write_idx.idx,
+        read_idx.idx,
+        GetStatus(),
+        ret,
+        acl_ret);
+  }
+  return true;
+}
+````
+
+## src-aclop-export
+
+**旧接口 ExportParams 与 ExecuteParas::Copy：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpParamMaker.h
+// 起始行：248
+
+  void ExportParams(ExecuteParas& params) {
+    static const auto max_len = sizeof(ExecuteParas::opType);
+    if (opName.length() + 1 < sizeof(ExecuteParas::opType)) {
+      opName.copy(params.opType, opName.length() + 1);
+    } else {
+      opName.copy(params.opType, max_len - 1);
+    }
+    params.attr = execParam.attr;
+    // make params
+    int inputNum = static_cast<int>(execParam.inDesc.size());
+    int outputNum = static_cast<int>(execParam.outDesc.size());
+
+    size_t inputTensorDescArrLen = inputNum * sizeof(uintptr_t);
+    size_t inputDataBuffArrLen = inputNum * sizeof(uintptr_t);
+
+    size_t outputTensorDescArrLen = outputNum * sizeof(uintptr_t);
+    size_t outputDataBuffArrLen = outputNum * sizeof(uintptr_t);
+
+    size_t totalMemLen = inputTensorDescArrLen + inputDataBuffArrLen + outputTensorDescArrLen + outputDataBuffArrLen;
+
+    char* basePtr = static_cast<char*>(malloc(totalMemLen));
+    AT_ASSERT(basePtr != nullptr, OPS_ERROR(ErrCode::PTR));
+    const aclTensorDesc** aclTensorInputDescArr = reinterpret_cast<const aclTensorDesc**>(basePtr);
+    basePtr += inputTensorDescArrLen;
+    const aclDataBuffer** aclDataInputBuffArr = reinterpret_cast<const aclDataBuffer**>(basePtr);
+    basePtr += inputDataBuffArrLen;
+
+    const aclTensorDesc** aclTensorOutputDescArr = reinterpret_cast<const aclTensorDesc**>(basePtr);
+    basePtr += outputTensorDescArrLen;
+    aclDataBuffer** aclDataOutputBuffArr = reinterpret_cast<aclDataBuffer**>(basePtr);
+
+    std::copy(execParam.inDesc.begin(), execParam.inDesc.end(), aclTensorInputDescArr);
+    std::copy(execParam.inBuffer.begin(), execParam.inBuffer.end(), aclDataInputBuffArr);
+    std::copy(execParam.outDesc.begin(), execParam.outDesc.end(), aclTensorOutputDescArr);
+    std::copy(execParam.outBuffer.begin(), execParam.outBuffer.end(), aclDataOutputBuffArr);
+
+    params.paras.input_num = inputNum;
+    params.paras.output_num = outputNum;
+    params.paras.input_desc = aclTensorInputDescArr;
+    params.paras.input_data_buf = aclDataInputBuffArr;
+    params.paras.output_desc = aclTensorOutputDescArr;
+    params.paras.output_data_buf = aclDataOutputBuffArr;
+    params.hostMemory = execParam.hostMem;
+    params.customHandler = execParam.customHandler;
+    params.pta_correlation_id = ExecuteParas::g_pta_correlation_id++;
+
+    if (!ForceJitCompileList::GetInstance().Inlist(opName) && env::CheckJitDisable()) {
+      params.isJitDisable = true;
+    }
+  }
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/NPUDefine.cpp
+// 起始行：22
+
+void ExecuteParas::Copy(ExecuteParas& other) {
+  strncpy(this->opType, other.opType, sizeof(ExecuteParas::opType) - 1);
+  this->paras = other.paras;
+  this->attr = other.attr;
+  this->constParams = other.constParams;
+  this->hostMemory = other.hostMemory;
+  this->isJitDisable = other.isJitDisable;
+  this->customHandler = other.customHandler;
+  this->pta_correlation_id = other.pta_correlation_id;
+}
+````
+
+## src-command-constructor
+
+**OpCommand 构造函数：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/framework/OpCommand.cpp
+// 起始行：45
+
+OpCommand::OpCommand() {
+  aclCmds = OpCommandImpls::GetInstance();
+  aclCmds->Push(aclCmd);
+  aclCmd->SetCustomHandler(nullptr);
+}
+````
+
+## src-stream-queue-initialization
+
+**默认流与队列的初始化：完整 initGlobalStreamState 与 initNPUStreamsOnce**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUStream.cpp
+// 起始行：218
+
+static void initGlobalStreamState() {
+  num_npus = c10_npu::device_count();
+  // Check if the number of GPUs matches the expected compile-time max number
+  // of GPUs.
+  AT_ASSERTM(
+      num_npus <= C10_COMPILE_TIME_MAX_NPUS,
+      "Number of NPU devices on the machine is larger than the compiled "
+      "max number of npus expected (",
+      C10_COMPILE_TIME_MAX_NPUS,
+      "). Increase that and recompile.",
+      PTA_ERROR(ErrCode::VALUE));
+
+  int device_id = 0;
+  auto ret = c10_npu::GetDevice(&device_id);
+  if (ret != ACL_ERROR_NONE) {
+    ASCEND_LOGE("Device has not been set");
+  }
+  // Initializes default streams
+  default_streams[device_id].device_index = device_id;
+  default_streams[device_id].stream_id = static_cast<int64_t>(makeStreamId(StreamIdType::DEFAULT, 0));
+  for (const auto p : c10::irange(kMaxStreamPriorities)) {
+    npu_counters[p][device_id] = 0;
+  }
+  auto& default_streamsi = default_streams[device_id];
+  NPU_CHECK_ERROR(
+      acl::AclrtCreateStreamWithConfig(&default_streamsi.stream, 0, (ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC)));
+  if (c10_npu::option::OptionsManager::GetTaskQueueEnable()) {
+    default_streamsi.repo->InitRepo(device_id);
+  }
+  // Initializes secondary streams
+  secondary_streams[device_id].device_index = device_id;
+  secondary_streams[device_id].stream_id = static_cast<int64_t>(makeStreamId(StreamIdType::SECONDARY, 0));
+  auto& secondary_streamsi = secondary_streams[device_id];
+  NPU_CHECK_ERROR(
+      acl::AclrtCreateStreamWithConfig(&secondary_streamsi.stream, 0, (ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC)));
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/torchnpu/pytorch/torch_npu/csrc/core/npu/NPUStream.cpp
+// 起始行：272
+
+static void initNPUStreamsOnce() {
+  // Inits default and secondary streams (once, globally)
+  c10::DeviceIndex device_index = current_device();
+  // makesure on real device
+  SetTargetDevice();
+  LazySetDevice(device_index);
+  c10_npu::NpuSysCtrl::GetInstance().LazyInitialize();
+  if (!initialize_flag[device_index]) {
+    std::lock_guard<std::mutex> lock(mtx[device_index]);
+    if (!initialize_flag[device_index]) {
+      initGlobalStreamState();
+      initialize_flag[device_index] = true;
+    }
+  }
+
+  if (current_streams) {
+    return;
+  }
+
+  // Inits current streams (thread local) to default streams
+  current_streams = std::make_unique<LeakyStreamInternals*[]>(num_npus);
+  for (auto i = decltype(num_npus){0}; i < num_npus; ++i) {
+    default_streams[i].device_index = i;
+    current_streams[i] = &default_streams[i];
+  }
+}
+````
+
+## src-typed-handle-return
+
+**TypedOperatorHandle：完整函数签名偏特化 class**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/aten/src/ATen/core/dispatch/Dispatcher.h
+// 起始行：613
+
+template <class Return, class... Args>
+class TypedOperatorHandle<Return(Args...)> final : public OperatorHandle {
+ public:
+  TypedOperatorHandle(TypedOperatorHandle&&) noexcept = default;
+  TypedOperatorHandle& operator=(TypedOperatorHandle&&) noexcept = default;
+  TypedOperatorHandle(const TypedOperatorHandle&) = default;
+  TypedOperatorHandle& operator=(const TypedOperatorHandle&) = default;
+
+  // See [Note: Argument forwarding in the dispatcher] for why Args doesn't use
+  // &&
+  C10_ALWAYS_INLINE Return call(Args... args) const {
+    return c10::Dispatcher::singleton().call<Return, Args...>(
+        *this, std::forward<Args>(args)...);
+  }
+
+  // See [Note: Argument forwarding in the dispatcher] for why Args doesn't use
+  // &&
+  C10_ALWAYS_INLINE Return
+  redispatch(DispatchKeySet currentDispatchKeySet, Args... args) const {
+    return c10::Dispatcher::singleton().redispatch<Return, Args...>(
+        *this, currentDispatchKeySet, std::forward<Args>(args)...);
+  }
+
+ private:
+  explicit TypedOperatorHandle(
+      std::list<Dispatcher::OperatorDef>::iterator operatorIterator)
+      : OperatorHandle(operatorIterator) {}
+  friend class OperatorHandle;
+};
+````
+
+## src-python-dispatch-return
+
+**Python 绑定的调用与返回生成器 emit_single_dispatch：完整函数**
+
+这是生成器源码，不是本地已生成的 THPVariable_avg_pool2d。它保留了调用 ATen 接口并用 wrap 返回输出的真实模板。
+
+````python
+# 来源：/Users/yuanchengyao/graduation-project/pytorch/tools/autograd/gen_python_functions.py
+# 起始行：1315
+
+def emit_single_dispatch(
+    ps: PythonSignature,
+    f: NativeFunction,
+    structseq_typenames: dict[str, str],
+    *,
+    symint: bool = True,
+) -> str:
+    """
+    Emit dispatch code for a single native function.
+    """
+
+    @with_native_function
+    def go(f: NativeFunction) -> str:
+        # header comments
+        if isinstance(ps, PythonSignatureDeprecated):
+            schema_comment = f"// [deprecated] aten::{ps.deprecated_schema}"
+        else:
+            schema_comment = f"// aten::{f.func}"
+
+        # dispatch lambda signature
+        name = cpp.name(f.func)
+        lambda_formals = ", ".join(
+            f"{a.type_str} {a.name}" for a in dispatch_lambda_args(ps, f, symint=symint)
+        )
+        lambda_return = dispatch_lambda_return_str(f)
+
+        # dispatch lambda body
+        dispatch_callee = cpp_dispatch_target(f)
+        dispatch_args = ", ".join(cpp_dispatch_exprs(f, python_signature=ps))
+
+        # from arg parser outputs to dispatch lambda arguments
+        parser_outputs = arg_parser_output_exprs(ps, f, symint=symint)
+        lambda_arg_exprs = dispatch_lambda_exprs(ps, f, symint=symint)
+        inits = "\n".join(lambda_arg_exprs.inits)
+        lambda_args = ", ".join(lambda_arg_exprs.exprs)
+
+        # scatter fields
+        # TODO: Checking `ps.method and ('requires_grad' in parser_outputs)` is a hacky
+        #       solution for enabling the 'requires_grad' argument for tensor methods
+        #       new_full, new_empty, and new_zeros. A much better but more difficult to
+        #       implement solution involves refactoring according to Ed's description here:
+        #       https://github.com/pytorch/pytorch/issues/36455#issuecomment-614767589
+        need_set_requires_grad = ps.tensor_options_args and (
+            not has_tensor_options(f)
+            or (ps.method and ("requires_grad" in parser_outputs))
+        )
+        set_requires_grad = (
+            f".set_requires_grad({parser_outputs['requires_grad'].expr})"
+            if need_set_requires_grad
+            else ""
+        )
+
+        if lambda_return == "void":
+            # Make in-place foreach return `self` at python-binding level.
+            # ref: https://github.com/pytorch/pytorch/pull/118622#pullrequestreview-1904804954
+            self_arg = f.func.arguments.self_arg
+            return_stmt: str
+            if (
+                str(f.func.name).startswith("_foreach_")
+                and f.func.kind() == SchemaKind.inplace
+            ):
+                # note(crcrpar): `_foreach_pow.ScalarAndTensor` does NOT have its in-place
+                # variant and it unlikely to have it in the future. Thus it's safe to have the following check.
+                if self_arg is None or not is_tensor_list_type(self_arg.argument.type):
+                    raise AssertionError(
+                        "Expected self_arg to be a tensor list type for inplace foreach"
+                    )
+                return_stmt = """PyObject* self_tensorlist = _r.args[0];
+Py_INCREF(self_tensorlist);
+return self_tensorlist;
+"""
+            else:
+                return_stmt = "Py_RETURN_NONE;"
+            return f"""\
+{schema_comment}
+{inits}
+auto dispatch_{name} = []({lambda_formals}) -> {lambda_return} {{
+  pybind11::gil_scoped_release no_gil;
+  {dispatch_callee}({dispatch_args});
+}};
+dispatch_{name}({lambda_args}){set_requires_grad};
+{return_stmt}
+"""
+        else:
+            typename = structseq_typenames.get(gen_structseq_typename_key(f))
+            structseq_typeref = f"{typename}, " if typename is not None else ""
+            return f"""\
+{schema_comment}
+{inits}
+auto dispatch_{name} = []({lambda_formals}) -> {lambda_return} {{
+  pybind11::gil_scoped_release no_gil;
+  return {dispatch_callee}({dispatch_args});
+}};
+return wrap({structseq_typeref}dispatch_{name}({lambda_args}){set_requires_grad});
+"""
+
+    return go(f)
+````
+
+## src-python-wrap-tensor
+
+**Tensor 对应的 wrap：两个完整重载**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/torch/csrc/autograd/utils/wrap_outputs.h
+// 起始行：69
+
+inline PyObject* wrap(const at::Tensor& tensor) {
+  return THPVariable_Wrap(tensor);
+}
+
+inline PyObject* wrap(at::Tensor&& tensor) {
+  return THPVariable_Wrap(std::move(tensor));
+}
+````
+
+## src-python-tensor-object
+
+**THPVariable_WrapWithType 与 THPVariable_Wrap：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/torch/csrc/autograd/python_variable.cpp
+// 起始行：409
+
+// Generic for const Tensor& or Tensor&&
+template <typename T>
+static PyObject* THPVariable_WrapWithType(
+    T&& var,
+    std::optional<PyTypeObject*> desired_type) {
+  if (!var.defined()) {
+    Py_RETURN_NONE;
+  }
+
+  c10::TensorImpl* tensor_impl = var.unsafeGetTensorImpl();
+  THPObjectPtr obj(PyObjectPreservation::get_or_init(*tensor_impl, [&]() {
+    PyTypeObject* type = reinterpret_cast<PyTypeObject*>(THPVariableClass);
+    if (desired_type) {
+      type = *desired_type;
+    } else if (C10_UNLIKELY(var.device().type() == c10::kXLA)) {
+      if (auto clazz = getPythonTensorClass(var.device())) {
+        type = reinterpret_cast<PyTypeObject*>(clazz);
+      }
+    }
+
+    PyObject* wrapper = type->tp_alloc(type, 0);
+    TORCH_CHECK_WITH(
+        OutOfMemoryError,
+        wrapper,
+        "Failed to allocate a ",
+        type->tp_name,
+        " object");
+    auto v = reinterpret_cast<THPVariable*>(wrapper);
+    new (&v->cdata) Tensor(std::forward<T>(var));
+    return wrapper;
+  }));
+
+  if (desired_type) {
+    check_tensor_subclass(obj.get(), *desired_type);
+  }
+  return obj.release();
+}
+
+PyObject* THPVariable_Wrap(at::TensorBase&& var) {
+  return THPVariable_WrapWithType(std::move(var), std::nullopt);
+}
+
+PyObject* THPVariable_Wrap(const at::TensorBase& var) {
+  return THPVariable_WrapWithType(var, std::nullopt);
+}
+
+PyObject* THPVariable_Wrap(const at::TensorBase& var, PyTypeObject* type) {
+  return THPVariable_WrapWithType(var, type);
+}
+````
+
+## src-opapi-library-evidence
+
+**libopapi.so 的动态符号：已有远端实验记录**
+
+来源：`/Users/yuanchengyao/workspace/pytorch-torchnpu测试学习/learn-PU1-mechanism/nn/runtime_evidence.md`，实验 6，起始行 114。下面是原记录中的命令和输出，本次没有重新执行；环境及版本区别见 [来源核对](#src-cann-provenance)。
+
+```text
+nm -D /usr/local/Ascend/ascend-toolkit/latest/lib64/libopapi.so | grep " T aclnn"
+00000000018aad48 T aclnnAvgPool2d
+00000000018af1f8 T aclnnAvgPool2dGetWorkspaceSize
+00000000013870d8 T aclnnEmbeddingBag
+000000000138a188 T aclnnEmbeddingBagGetWorkspaceSize
+0000000001856798 T aclnnAdaptiveAvgPool2d ...
+```
+
+这份摘录证明所记录的动态库定义了这些接口符号，不提供接口内部的调用栈或设备 kernel 名称。原记录中关于后续驱动层次的概括，不作为本次已逐跳核对的调用链。
+
+## src-add-docstr
+
+**THPModule_addDocStr：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/torch/csrc/Module.cpp
+// 起始行：441
+
+static PyObject* THPModule_addDocStr(PyObject* _unused, PyObject* args) {
+  // adds a __doc__ string to a function, similar to numpy's arr_add_docstring
+  static std::vector<std::string> all_docs;
+  PyObject* obj = nullptr;
+  PyObject* doc_obj = nullptr;
+  if (!PyArg_ParseTuple(args, "OO", &obj, &doc_obj)) {
+    return nullptr;
+  }
+
+  const char* doc_str = "<invalid string>";
+  if (THPUtils_checkString(doc_obj)) {
+    all_docs.push_back(THPUtils_unpackString(doc_obj));
+    doc_str = all_docs.back().c_str();
+  }
+
+  if (Py_TYPE(obj) == &PyCFunction_Type) {
+    PyCFunctionObject* f = reinterpret_cast<PyCFunctionObject*>(obj);
+    if (f->m_ml->ml_doc) {
+      return PyErr_Format(
+          PyExc_RuntimeError,
+          "function '%s' already has a docstring",
+          f->m_ml->ml_name);
+    }
+    f->m_ml->ml_doc = doc_str;
+  } else if (strcmp(Py_TYPE(obj)->tp_name, "method_descriptor") == 0) {
+    PyMethodDescrObject* m = reinterpret_cast<PyMethodDescrObject*>(obj);
+    if (m->d_method->ml_doc) {
+      return PyErr_Format(
+          PyExc_RuntimeError,
+          "method '%s' already has a docstring",
+          m->d_method->ml_name);
+    }
+    m->d_method->ml_doc = doc_str;
+  } else if (strcmp(Py_TYPE(obj)->tp_name, "getset_descriptor") == 0) {
+    PyGetSetDescrObject* m = reinterpret_cast<PyGetSetDescrObject*>(obj);
+    if (m->d_getset->doc) {
+      return PyErr_Format(
+          PyExc_RuntimeError,
+          "attribute '%s' already has a docstring",
+          m->d_getset->name);
+    }
+    m->d_getset->doc = doc_str;
+  } else if (PyType_Check(obj)) {
+    PyTypeObject* t = reinterpret_cast<PyTypeObject*>(obj);
+    if (t->tp_doc) {
+      return PyErr_Format(
+          PyExc_RuntimeError, "Type '%s' already has a docstring", t->tp_name);
+    }
+    t->tp_doc = doc_str;
+  } else {
+    return PyErr_Format(
+        PyExc_TypeError,
+        "don't know how to add docstring to type '%s'",
+        Py_TYPE(obj)->tp_name);
+  }
+
+  return Py_NewRef(obj);
+}
+````
+
+
+## src-python-method-entry
+
+**Python 绑定名称与方法表条目：完整生成器函数**
+
+````python
+# 来源：/Users/yuanchengyao/graduation-project/pytorch/tools/autograd/gen_python_functions.py
+# 起始行：224
+
+def get_pycname(name: BaseOperatorName) -> str:
+    return f"THPVariable_{name}"
+````
+
+````python
+# 来源：/Users/yuanchengyao/graduation-project/pytorch/tools/autograd/gen_python_functions.py
+# 起始行：1092
+
+def method_def(
+    name: BaseOperatorName,
+    module: str | None,
+    overloads: Sequence[PythonSignatureNativeFunctionPair],
+    *,
+    method: bool,
+) -> str:
+    """
+    Generate method def entry.
+    """
+    pycname = get_pycname(name)
+
+    if name.dunder_method:
+        # PyMethodDef entry for binary op, throws not implemented error
+        pycname = f"TypeError_to_NotImplemented_<{pycname}>"
+
+    if is_noarg(overloads):
+        flags = "METH_NOARGS" if method else "METH_VARARGS | METH_KEYWORDS"
+    else:
+        pycname = f"castPyCFunctionWithKeywords({pycname})"
+        flags = "METH_VARARGS | METH_KEYWORDS"
+
+    if module == "torch":
+        flags += " | METH_STATIC"
+
+    return f'{{"{name}", {pycname}, {flags}, nullptr}},'
+````
+
+
+## src-python-tensor-unpack
+
+**PythonArgs::tensor 与 THPVariable_Unpack：完整函数**
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/torch/csrc/utils/python_arg_parser.h
+// 起始行：396
+
+inline at::Tensor PythonArgs::tensor(int i) {
+  if (args[i] && THPVariable_CheckExact(args[i])) {
+    return THPVariable_Unpack(args[i]);
+  }
+  return tensor_slow(i);
+}
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/torch/csrc/autograd/python_variable.h
+// 起始行：75
+
+inline const at::Tensor& THPVariable_Unpack(THPVariable* var) {
+  return var->cdata;
+}
+
+inline const at::Tensor& THPVariable_Unpack(PyObject* obj) {
+  return THPVariable_Unpack(reinterpret_cast<THPVariable*>(obj));
+}
+````
+
+
+## src-dispatch-table-index
+
+**调度表下标：完整成员函数及单 key 查询函数**
+
+第一个成员函数用于 C10_MOBILE_TRIM_DISPATCH_KEYS 条件下的裁剪构建，第二个用于对应的普通构建分支；最后一个函数用于查询单个 DispatchKey。它们不是三个需要依次调用的步骤。
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/c10/core/DispatchKeySet.h
+// 起始行：456
+
+  [[nodiscard]] int getDispatchTableIndexForDispatchKeySet() const {
+    auto dk = highestPriorityTypeId();
+    switch (dk) {
+      case DispatchKey::Undefined:
+        return 0;
+      case DispatchKey::CPU:
+        return 1;
+      case DispatchKey::QuantizedCPU:
+        return 2;
+      case DispatchKey::SparseCPU:
+        return 3;
+      case DispatchKey::BackendSelect:
+        return 4;
+      case DispatchKey::ADInplaceOrView:
+        return 5;
+      case DispatchKey::AutogradOther:
+        return 6;
+      case DispatchKey::AutogradCPU:
+        return 7;
+      default:
+        return -1;
+    }
+  }
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/c10/core/DispatchKeySet.h
+// 起始行：484
+
+  [[nodiscard]] int getDispatchTableIndexForDispatchKeySet() const {
+    auto functionality_idx =
+        DispatchKeySet(repr_ >> num_backends).indexOfHighestBit();
+    auto offset_and_mask = offsetsAndMasks()[functionality_idx];
+    // Mask the functionality bits out first, then right-shift by 1.
+    // right-shifting by 1 because everything is zero-indexed.
+    // E.g. 000001 (CPU) should give us an offset of 0, 000010 (CUDA) should
+    // give us an offset of 1, etc.
+    auto backend_idx =
+        DispatchKeySet((repr_ & offset_and_mask.mask) >> 1).indexOfHighestBit();
+    return offset_and_mask.offset + backend_idx;
+  }
+````
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/c10/core/DispatchKeySet.h
+// 起始行：633
+
+inline int getDispatchTableIndexForDispatchKey(DispatchKey k) {
+  return DispatchKeySet(k).getDispatchTableIndexForDispatchKeySet();
 }
 ````
