@@ -25,6 +25,7 @@
   - [src-functions-h-template](#src-functions-h-template)
   - [src-functions-cpp-template](#src-functions-cpp-template)
   - [src-dispatcher-class](#src-dispatcher-class)
+  - [src-operator-handle](#src-operator-handle)
   - [src-find-name](#src-find-name)
   - [src-find-schema](#src-find-schema)
   - [src-operator-entry](#src-operator-entry)
@@ -7475,4 +7476,171 @@ inline const at::Tensor& THPVariable_Unpack(PyObject* obj) {
 inline int getDispatchTableIndexForDispatchKey(DispatchKey k) {
   return DispatchKeySet(k).getDispatchTableIndexForDispatchKeySet();
 }
+````
+
+## src-operator-handle
+
+**OperatorHandle：完整 class**
+
+此类保存算子记录的直接指针与迭代器，TypedOperatorHandle 沿用其保存方式。
+
+````cpp
+// 来源：/Users/yuanchengyao/graduation-project/pytorch/aten/src/ATen/core/dispatch/Dispatcher.h
+// 起始行：445
+
+class TORCH_API OperatorHandle {
+  template <typename T>
+  friend struct std::hash;
+
+ public:
+  OperatorHandle(OperatorHandle&&) noexcept = default;
+  OperatorHandle& operator=(OperatorHandle&&) noexcept = default;
+  OperatorHandle(const OperatorHandle&) = default;
+  OperatorHandle& operator=(const OperatorHandle&) = default;
+  // NOLINTNEXTLINE(performance-trivially-destructible)
+  ~OperatorHandle();
+
+  const OperatorName& operator_name() const {
+    return operatorDef_->op.operator_name();
+  }
+
+  bool hasSchema() const {
+    return operatorDef_->op.hasSchema();
+  }
+
+  const FunctionSchema& schema() const {
+    return operatorDef_->op.schema();
+  }
+
+  const std::string& debug() const {
+    return operatorDef_->op.debug();
+  }
+
+  std::string dumpState() const {
+    return operatorDef_->op.dumpState();
+  }
+
+  bool hasKernelForDispatchKey(DispatchKey k) const {
+    return operatorDef_->op.hasKernelForDispatchKey(k);
+  }
+
+  bool isKernelFallthroughKernel(DispatchKey k) const {
+    return operatorDef_->op.kernelForDispatchKey(k).isFallthrough();
+  }
+
+  bool hasKernelForAnyDispatchKey(DispatchKeySet k) const {
+    return operatorDef_->op.hasKernelForAnyDispatchKey(k);
+  }
+
+  bool hasComputedKernelForDispatchKey(DispatchKey k) const {
+    return operatorDef_->op.hasComputedKernelForDispatchKey(k);
+  }
+
+  SafeKernelFunction getComputedKernelForDispatchKey(DispatchKey k) const {
+    return operatorDef_->op.getComputedKernelForDispatchKey(k);
+  }
+
+  const KernelFunction& lookup(DispatchKeySet ks) const {
+    return operatorDef_->op.lookup(ks);
+  }
+
+  std::string dumpComputedTable() const {
+    return operatorDef_->op.dumpComputedTable();
+  }
+
+  const DispatchKeyExtractor& dispatchKeyExtractor() const {
+    return operatorDef_->op.dispatchKeyExtractor();
+  }
+
+  void checkInvariants() const {
+    operatorDef_->op.checkInvariants();
+  }
+
+  c10::ArrayRef<at::Tag> getTags() const {
+    return operatorDef_->op.getTags();
+  }
+
+  void setReportErrorCallback_(std::unique_ptr<c10::SafePyObject> callback) {
+    operatorDef_->op.setReportErrorCallback_(std::move(callback));
+  }
+
+  bool hasTag(const at::Tag& tag) const {
+    for (const auto& tag_ : getTags()) {
+      if (tag == tag_) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  template <class FuncType>
+  TypedOperatorHandle<FuncType> typed() const {
+    // NB: This assert is not 100% sound: you can retrieve a typed() operator
+    // handle prior to ANY C++ signature being registered on the operator
+    // and the check will say everything is OK (at which point you can then
+    // smuggle in a kernel that is typed incorrectly).  For everything
+    // in core library this won't happen, because all the static registrations
+    // will be done by the time a typed() handle is acquired.
+#if !defined C10_MOBILE
+    operatorDef_->op.assertSignatureIsCorrect<FuncType>();
+    if (fn_has_symint<FuncType>::value) {
+      operatorDef_->op.assertSignatureIsCorrect<
+          typename fn_remove_symint<FuncType>::type>();
+    }
+#endif
+    return TypedOperatorHandle<FuncType>(operatorIterator_);
+  }
+
+  void callBoxed(Stack* stack) const {
+    c10::Dispatcher::singleton().callBoxed(*this, stack);
+  }
+
+  void callBoxed(Stack& stack) const {
+    callBoxed(&stack);
+  }
+
+  void callBoxedForDispatchKey(DispatchKey dk, Stack& stack) const {
+    c10::Dispatcher::singleton().callBoxedForDispatchKey(*this, dk, &stack);
+  }
+
+  void redispatchBoxed(DispatchKeySet ks, Stack* stack) const {
+    c10::Dispatcher::singleton().redispatchBoxed(*this, ks, stack);
+  }
+
+  template <typename F>
+  PyObject* getPythonOp(F slow_accessor) const {
+    return operatorDef_->op.getPythonOp(slow_accessor);
+  }
+
+  bool operator==(const OperatorHandle& other) const {
+    return operatorDef_ == other.operatorDef_;
+  }
+
+  bool operator!=(const OperatorHandle& other) const {
+    return operatorDef_ != other.operatorDef_;
+  }
+
+ private:
+  explicit OperatorHandle(
+      std::list<Dispatcher::OperatorDef>::iterator operatorIterator)
+      : operatorDef_(&*operatorIterator), operatorIterator_(operatorIterator) {}
+  friend class Dispatcher;
+  template <class>
+  friend class TypedOperatorHandle;
+
+  // Storing a direct pointer to the OperatorDef even though we
+  // already have the iterator saves an instruction in the critical
+  // dispatch path. The iterator is effectively a
+  // pointer-to-std::list-node, and (at least in libstdc++'s
+  // implementation) the element is at an offset 16 bytes from that,
+  // because the prev/next pointers come first in the list node
+  // struct. So, an add instruction would be necessary to convert from the
+  // iterator to an OperatorDef*.
+  Dispatcher::OperatorDef* operatorDef_;
+
+  // We need to store this iterator in order to make
+  // Dispatcher::cleanup() fast -- it runs a lot on program
+  // termination (and presumably library unloading).
+  std::list<Dispatcher::OperatorDef>::iterator operatorIterator_;
+};
 ````

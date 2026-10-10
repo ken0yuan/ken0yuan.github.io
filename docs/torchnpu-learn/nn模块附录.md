@@ -69,6 +69,10 @@ C++ Tensor 关联着 TensorImpl，调度标记属于这套已有的张量信息�
 
 [Dispatcher](nn模块源码.md#src-dispatcher-class)用 `std::list<OperatorDef>` 保存算子定义，用查询表按名字找到对应记录。`OperatorHandle` 持有指向记录的迭代器，可以理解为“在已登记的算子记录中定位这一条”，无需复制整份定义。记录中包含 schema、提取器和调度表。
 
+更具体地说，[OperatorHandle](nn模块源码.md#src-operator-handle)同时保存 `operatorIterator_` 和 `operatorDef_`：前者定位列表中的记录，后者是直接访问该记录的指针。[TypedOperatorHandle](nn模块源码.md#src-typed-handle-return)沿用这套保存方式，并补上与函数签名对应的 `call` 入口。
+
+`OperatorDef` 里的 `impl::OperatorEntry op;` 声明了一个名为 `op` 的成员。因此 `op.operatorDef_->op` 的第一个 `op` 是外层句柄，最后一个 `op` 是记录内的成员。两者不是同一类型，也不是再次按名字查找另一个算子。
+
 `static auto op = ...` 缓存这个句柄后，后续调用省去按名字查找，但每次 `op.call(...)` 仍然根据本次 Tensor 的 keyset 选用实现。句柄缓存与 NPU 执行器缓存、JIT 编译缓存属于不同阶段。
 
 <a id="tls"></a>

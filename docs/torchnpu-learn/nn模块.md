@@ -1,6 +1,7 @@
 ## 先讲一个简单的二维平均池化
 
 本文用 `PT` 表示 PyTorch 源码根目录，`TN` 表示 torch_npu 仓库根目录。正文沿请求的传递和输出的返回讲调用链；C++ 语法与包装实现细节集中在[附录](nn模块附录.md)。完整源码保存在[源码汇编](nn模块源码.md)，对应代码块注明实际路径与行号。
+
 - TODO
   - 深入到最后的细节
     - wrapper 如何进入具体的 op_plugin 实现；
@@ -31,6 +32,8 @@ test_AvgPool2d_npu()
 ├─ libopapi.so（闭源）→ libascendcl → 驱动      Open-source tracing boundary
 └─ NPU                                          结果写回 NPU 内存中的输出 Tensor
 ```
+
+<a id="nn-python-api"></a>
 
 ### Part1. torch 侧对算子的python包装
 
@@ -79,6 +82,8 @@ test_AvgPool2d_npu()
                 3. [自动微分 Functions.h](nn模块源码.md#src-functions-h-template)
                 4. [自动微分 Functions.cpp](nn模块源码.md#src-functions-cpp-template)
 
+<a id="nn-aten-call"></a>
+
 ### Part2. 包装好的CPP函数怎么找到对应的一类算子
 
 #### Python 绑定部分
@@ -88,7 +93,7 @@ test_AvgPool2d_npu()
 - 这里做的主要是让传入参数类型转换为能被CPP处理的参数
 - 后者只是一个简单的命名+包装注释
 
-`THPVariable_avg_pool2d` 的生成机制见 [method_impl](nn模块源码.md#src-python-binding-gen)，绑定容器见[完整 nn 绑定模板](nn模块源码.md#src-python-binding-template)。
+`THPVariable_avg_pool2d` 的生成机制见 [method_impl](nn模块源码.md#src-python-binding-gen)，绑定容器见[完整 nn 绑定模板](nn模块源码.md#src-python-binding-template)。如果build之后，函数为PT/torch/csrc/autograd/generated/python_nn_functions.cpp:1061
 
 - 第一步：利用 `parser` 按生成的参数签名解析本次 Python 调用传入的参数
 - 第二步：调用局部函数 `dispatch_avg_pool2d`，在临时释放 GIL 后，把拆好的参数交给 `at::avg_pool2d`。名字的写法见[附录](nn模块附录.md#cpp-names)，lambda 与 GIL 的细节分别见[回调说明](nn模块附录.md#cpp-lambda)和 [Guard 说明](nn模块附录.md#cpp-guards)
@@ -113,32 +118,41 @@ static ... create_avg_pool2d_typed_handle() {
 
 - `at::avg_pool2d` 本体只有一行：`return at::_ops::avg_pool2d::call(...)`,位于[ATen C++ API 生成器 ComputeFunction](nn模块源码.md#src-cpp-api-gen)
 - `at::_ops::avg_pool2d::call(...)`
-    - 第一步，按 `avg_pool2d` 的名称找到算子记录，缓存其句柄。以后仍根据本次输入进行调度，缓存句柄不表示固定使用第一次选中的后端；[句柄的保存方式](nn模块附录.md#operator-handle)和 [static 写法](nn模块附录.md#cpp-static)见附录。
-    - 第二步，调用句柄的`call`方法，分发器选中实现后，经[functor 包装代码](nn模块源码.md#src-unboxed-adapter)调用后端算子
+    - 第一步，按照`avg_pool2d`的名字来查找算子句柄，使用`static` 变量缓存下来
+        - 在pytorch中已登记算子存放的格式是一个链表，在`dispatcher`中的`std::list<OperatorDef> operators_;`
+            - [Dispatcher](nn模块源码.md#src-dispatcher-class)
+        - 算子句柄持有指向这条链表中 `OperatorDef` 节点的迭代器，可用它访问对应记录
+            - [Dispatcher](nn模块源码.md#src-dispatcher-class)
+            - 存放了`impl::OperatorEntry`和生命周期管理信息
+        - 通过 `operatorLookupTable_` 哈希表快速查询算子句柄；见 [findSchemaOrThrow](nn模块源码.md#src-find-schema) 与 [findOrRegisterName_](nn模块源码.md#src-find-name)
+    - 第二步，调用句柄的`call`方法，调用 tensor 计算运行时后端的算子
     - [算子句柄与 call 生成器 ComputeOperators](nn模块源码.md#src-operator-gen)
 
-### Part3. 如何通过dispatch key查询真正需要定位的算子
+<a id="nn-dispatch"></a>
 
-#### 定位算子的流程：
+### Part3. 如何通过dispatch key查询真正需要定位的算子（调用流程）
 
-[OperatorEntry](nn模块源码.md#src-operator-entry)
-上文的 `OperatorEntry` 保存名称、签名和后端实现，下面看它的成员
+**我们前面提到`op.call`,这里的 `op` 是 `TypedOperatorHandle`，也就是带有调用参数类型信息的算子句柄。这个op有一堆`OperatorDef`类型的算子包装，这个包装中的op是`OperatorEntry`类型, 这是我们后续关注的重点，这个要先明确。**
+
+他的本次输入 `self` 和池化设置则在 `op.call(...)` 时才传进去。所以，下一步先进入句柄自己的 `call`。在 [Dispatcher.h:623–625](nn模块源码.md#src-typed-handle-return)，它调用了[Dispatcher::call](nn模块源码.md#src-dispatcher-call)。细节我们后续细说，而在细讲Dispatcher:call之前，我们先了解一下这个OperatorEntry，讲解call离不开他
+
+[OperatorEntry](nn模块源码.md#src-operator-entry)保存名称、签名和后端实现，下面看它的成员
 
 - `name_`：这个条目代表哪个算子重载，例如 `aten::avg_pool2d` 的默认重载。
 - `schema_`：这个算子接收什么参数、返回什么结果等信息。
 - `dispatchTable_`：各个运行时 dispatch key 对应的可调用实现数组。
 - `dispatchKeyExtractor_`：帮助从本次参数及执行状态中提取调度所需的 keyset。
 
-真正机制在后两者，我们分开聊，如果从真实的tensor计算时候调用的参数，他们配合逻辑是这样的：
+真正机制在后两者，我们分开聊，当一次真实的call发生时，传入tensor，他们配合逻辑是这样的：
 
 - [Dispatcher::call](nn模块源码.md#src-dispatcher-call)
-- 使用`dispatchKeyExtractor_`提取`dispatchKeySet`
-- `lookup(keyset)` 返回表中选中的 `KernelFunction`
-- 把原来的 Tensor 和池化参数传给选中的`KernelFunction`实现
+  - 使用`dispatchKeyExtractor_`提取`dispatchKeySet`
+  - `lookup(keyset)` 返回`dispatchTable_`中选中的 `KernelFunction`
+  - 把原来的 Tensor 和池化参数传给选中的`KernelFunction`实现
 
 #### 按照顺序，先讲`OperatorEntry`的`dispatchKeyExtractor_`
 
-这里有 boxed 和 unboxed 两种传参入口。本例沿 unboxed 路径，直接接收前面解析出的 Tensor、整数列表和布尔值；提取器从适用的 Tensor 参数收集 key。Python Tensor 怎样取得 C++ 表示，以及 `Args...` 是什么，见[附录](nn模块附录.md#python-tensor-to-cpp)。boxed 入口的含义见[参数说明](nn模块附录.md#python-tensor-to-cpp)，参数包的语法见[模板说明](nn模块附录.md#cpp-templates)。
+我们的传入算子的参数有两种：boxed 和 unboxed 。本例沿 unboxed 路径，直接接收前面解析出的 Tensor、整数列表和布尔值；提取器从适用的 Tensor 参数收集 key。Python Tensor 怎样取得 C++ 表示，以及 `Args...` 是什么，见[附录](nn模块附录.md#python-tensor-to-cpp)。boxed 入口的含义见[参数说明](nn模块附录.md#python-tensor-to-cpp)，参数包的语法见[模板说明](nn模块附录.md#cpp-templates)。
 
 - 这个类包含几种参数
     - [DispatchKeyExtractor](nn模块源码.md#src-key-extractor)
@@ -193,9 +207,70 @@ divisor_override      可选整数        → 不贡献 keyset
         - `AutogradCPU` 槽位/`AutogradPrivateUse1` 槽位(自动微分调用入口)
 
 - `KernelFunction`
-    - [KernelFunction](nn模块源码.md#src-kernel-class)
-        - 这个对象的三个调用相关字段中，我们目前只关注 `unboxed_kernel_func_`：它保存 unboxed 适配函数入口的地址，不是 `KernelFunction` 对象的地址
-- 这些实现何时填入调度表？注册时：
+    - [KernelFunction](nn模块源码.md#src-kernel-class)包含的成员
+      - boxed_kernel_func_：BoxedKernel 对象
+        - functor_：持有包装对象的指针，指向一个**OperatorKernel**，
+          - (*functor_)(...)就可以调用OperatorKernel的operator方法
+          - 这个可以参考附录**TODO**
+        - boxed_kernel_func_：boxed 适配函数的地址
+      - unboxed_kernel_func_：普通 unboxed 适配函数的地址
+      - sym_unboxed_kernel_func_：符号整数 unboxed 适配函数的地址
+
+#### 我们找到dispatchkey和dispatchtable之后的pytorch侧全流程
+
+我们有了提取出来的dispatchkey，然后前往/Users/yuanchengyao/graduation-project/pytorch/aten/src/ATen/core/dispatch/OperatorEntry.h：182,第一句计算数组下标/Users/yuanchengyao/graduation-project/pytorch/c10/core/DispatchKeySet.h:484，第二句取出这个位置的 KernelFunction
+
+注意，此处的下标一般来说就会知道是哪种槽位了，但是不能确定是`PrivateUse1`还是`AutogradPrivateUse1`，一般后者优先级高，我们不一定就会绑定到前者对应的NPU wrapper。
+
+随后进入下一步，带入参数进入kernelfunction
+
+- step1: 调用kernelfuntion的call功能：
+    - [KernelFunction::call](nn模块源码.md#src-kernel-call)：调用 `unboxed_kernel_func_` 保存的地址
+    - 第一步，提取指针`functor = boxed_kernel_func_.getFunctor()`，见 [getFunctor 完整函数](nn模块源码.md#src-boxed-get-functor)
+    - 第二步，把指针、参数和`unboxed_kernel_func_`传给`callUnboxedKernelFunction`
+- step2 `callUnboxedKernelFunction`
+    - [callUnboxedKernelFunction](nn模块源码.md#src-call-unboxed)
+    - 这个地方把void类型的`unboxed_kernel_func`变成一个接收确定类型参数的func去执行运算
+- step3 func是什么（具体理解需要参考下面的注册环节）
+    - 我们在注册的时候调用构造函数的函数[KernelFunction::makeFromUnboxedFunctor](nn模块源码.md#src-make-functor)点明了`unboxed_kernel_func_`是指向`wrap_kernel_functor_unboxed`的一个call方法
+    - 这个struct的call方法在[wrap_kernel_functor_unboxed_](nn模块源码.md#src-unboxed-adapter)
+      - 这个函数的用处是把基类指针转回具体类指针，对象本身早已存在：将 `OperatorKernel*` 转回实际的 `KernelFunctor*`。
+      - `std::forward` 只负责转发参数、保留相应的值类别
+      - 相当于`functor_->operator()(std::forward<ParameterTypes>(args)...);`
+      - tips：当前这个适配器分支不向 wrapper 转发 `DispatchKeySet`
+    - `KernelFunctor` 是模板类型参数，不是在这里定义的某个固定类
+- step4 KernelFunctor* 对应的 operator 又是什么
+  - 这里我们不能看调用链了，必须看注册, 所以我们这里只做简单的追踪，`makeFromUnboxedFunction`把`typename impl::WrapFunctionIntoFunctor<FuncPtr>::type`传给了`makeFromUnboxedFunctor`，这个被确定为KernelFunctor指针
+  - 这个指针指向的类型是type，而`WrapFunctionIntoFunctor`把type定义成了下面的东西
+    - WrapFunctionIntoFunctor_挂载了
+      - FuncPtr：绑定了哪个函数。
+      - 函数的返回类型。
+      - 函数的参数类型列表。
+  - 而在真实注册的时候，可以这么理解
+   ```cpp
+      using WrapperToken = c10::CompileTimeFunctionPointer<
+         decltype(wrapper_NPU__avg_pool2d),
+         &wrapper_NPU__avg_pool2d
+      >;
+
+      // WrapperParameterList 代表 wrapper 全部参数类型组成的列表。
+      using ConcreteFunctor = c10::impl::detail::WrapFunctionIntoFunctor_<
+         WrapperToken,
+         at::Tensor,
+         WrapperParameterList
+      >;
+   ```
+  - 这里的FuncPtr对应了WrapperToken，他指向了我们注册时候注册的`TORCH_FN(wrapper_NPU__avg_pool2d)`
+
+### Part4. 如何通过privateuse1挂载，调用npu算子（注册流程）
+
+两个框架交接的地方，如何从pytorch的`KernelFunction` 内部的 `unboxed_kernel_func_`到torchnpu的`NPU wrapper`
+
+- [RegisterNPU.cpp 对应的生成逻辑](nn模块源码.md#src-npu-wrapper-gen)：该文件由构建生成，本地尚不存在；文件组装与注册块见 [gen_dispatcher_registrations](nn模块源码.md#src-npu-register-gen)。
+
+#### 注册链条
+
+- 这些实现何时填入调度表？注册时：（我们可以看Part4，这个地方只讲了一点重点）
     - [Dispatcher::registerImpl](nn模块源码.md#src-register-impl)
     - 这里关注三项注册信息
         - 给哪个opname注册、
@@ -213,15 +288,9 @@ divisor_override      可选整数        → 不贡献 keyset
     - key 怎样映射为数组下标，以及 `dispatch_ix == -1` 的含义，见[附录](nn模块附录.md#dispatch-table-index)
     - 重点：拿到数组元素以后，怎样真正调用函数？
 
-### Part4. 如何通过privateuse1挂载，调用npu算子
-
-两个框架交接的地方，如何从pytorch的`KernelFunction` 内部的 `unboxed_kernel_func_`到torchnpu的`NPU wrapper`
-
-- [RegisterNPU.cpp 对应的生成逻辑](nn模块源码.md#src-npu-wrapper-gen)：该文件由构建生成，本地尚不存在；文件组装与注册块见 [gen_dispatcher_registrations](nn模块源码.md#src-npu-register-gen)。
-
-#### 注册链条
-
-先回到调用前的注册阶段。下面的 `W` 代表 `wrapper_NPU__avg_pool2d`；这是注册形状示意，完整生成器见 [NPU 注册文件生成器](nn模块源码.md#src-npu-register-gen)。
+这里要反着看，从已经在torchnpu包装好的`avg_pool2d`算子（NPU wrapper）讲起，他是怎么一步步挂载到
+`unboxed_kernel_func_`的
+下面是注册形状示意，`W` 代表 wrapper；完整生成器见 [NPU 注册文件生成器](nn模块源码.md#src-npu-register-gen)。
 
 ```cpp
 TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
@@ -229,23 +298,159 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 }
 ```
 
-这段代码登记三件事：算子名是 `aten::avg_pool2d`，实现挂在 `PrivateUse1` 槽位，最终要执行的函数是 `W`。wrapper 和注册代码在构建时生成；运行时加载相关库，初始化过程才把它接入 Dispatcher。宏怎样生成初始化入口，见[附录](nn模块附录.md#registration-start)。
+- 我们的需要注册的wrapper是`wrapper_NPU__avg_pool2d`,他的函数定义是torchnpugen在构建阶段生成的
+- `TORCH_LIBRARY_IMPL`这个宏定义帮助我们注册了他（这个宏定义的具体机制看附录）
+    - [TORCH_LIBRARY_IMPL](nn模块源码.md#src-library-macro)、[_TORCH_LIBRARY_IMPL](nn模块源码.md#src-library-macro-expand)
+    - 生成：一个包含上述注册语句的初始化函数。一个静态 `TorchLibraryInit` 对象。
+    - 加载相关动态库、执行静态对象初始化时，会调用 `TorchLibraryInit` 的构造函数
+        - [TorchLibraryInit](nn模块源码.md#src-library-init)
+        - 这里关键是一个`fn(lib_)`
+        - `lib_` 已携带 aten 和 `PrivateUse1`
+        - fn是一个执行注册的函数，执行`m.impl(...)`，具体内容参考前面的宏定义注册附录
+- 在构建完成后，我们就会拥有一个已经定义编译好的NPU wrapper和`TorchLibraryInit`注册初始化函数，下一步进入运行阶段的import，正式开始注册
+    - [TORCH_FN_TYPE](nn模块源码.md#src-torch-fn-type)、[TORCH_FN](nn模块源码.md#src-torch-fn)、[CompileTimeFunctionPointer](nn模块源码.md#src-compile-pointer)
+    - 这里定义了`TORCH_FN` 和 `TORCH_FN_TYPE`：后者表示绑定函数的类型，前者创建该类型的对象,我们通俗的理解一下`TORCH_FN(W)`干了什么：
 
-从 `m.impl(...)` 进入 [Library::impl](nn模块源码.md#src-library-impl)，它把传入的 wrapper 封装成 `CppFunction`。其构造过程调用 [makeFromUnboxedFunction](nn模块源码.md#src-make-function)，再由 [makeFromUnboxedFunctor](nn模块源码.md#src-make-functor)把适配函数入口和函数对象一起装入 `KernelFunction`。其中 `unboxed_kernel_func_` 保存适配函数的地址，这个适配函数后续会调用 wrapper。`TORCH_FN`、模板和对象创建的具体写法见[附录：wrapper 的装配](nn模块附录.md#registration-wrapper)。
+        ```cpp
+        // 定义一个类型：它绑定了 add_one 这个函数。
+        using AddOneToken =
+           c10::CompileTimeFunctionPointer<int(int), &add_one>;
+        // 创建这个类型的对象。
+        AddOneToken token;
+        ```
 
-随后，[Library::_impl](nn模块源码.md#src-library-_impl)把算子名、key 和准备好的实现交给 `Dispatcher::registerImpl`。它找到对应算子记录，再调用 [registerKernel](nn模块源码.md#src-register-kernel)保存注册信息，并通过 [updateDispatchTable_](nn模块源码.md#src-update-table)更新运行时入口。
+        - 初始化这个struct生成的对象：`CompileTimeFunctionPointer` 长什么样
+            - `FuncType_` = W 的函数类型
+            - `func_ptr_` = W 的函数地址
+            - 提供返回`func_ptr_`的函数
+        - 这个`TORCH_FN(W)`就是后续的`raw_f`
+- impl定义在[Library::impl](nn模块源码.md#src-library-impl)，我们考虑非 mobile 分支
+    - 他可以分为几步
+        - `CppFunction f(std::forward<Func>(raw_f));`
+            - `raw_f`就是`TORCH_FN(W)`
+            - `CppFunction`定义了一个变量f，`f.func_` 将使用`std::forward<Func>(raw_f)`让自己变成一个能调用 W 的 `KernelFunction`
+        - `_impl`
 
-注册阶段到这里结束：wrapper 已经通过包装层接入 `PrivateUse1` 的有效表项。下一阶段从一次真实调用的 `KernelFunction::call` 开始，沿保存的适配入口进入 wrapper。
+**`CppFunction`**
+
+- 先讲`CppFunction` 构造函数
+    - 类定义在[CppFunction](nn模块源码.md#src-cppfunction)，非mobile分支构造函数在[CppFunction](nn模块源码.md#src-cppfunction)
+    - 类有很多成员：
+        - `func_`：                      一个 `c10::KernelFunction` 成员
+        - `cpp_signature_`：             C++ 函数签名信息
+        - `schema_`：                    schema 信息
+    - 构造函数对应最重要的是初始化`func_(c10::KernelFunction::makeFromUnboxedFunction(f))`
+        - 这里的f指的就是我们前面的`std::forward<Func>(raw_f)`
+- `makeFromUnboxedFunction`
+    - 定义在：[KernelFunction::makeFromUnboxedFunction](nn模块源码.md#src-make-function),（尖括号指定编译期模板参数，圆括号传入实际函数参数）
+    - 非 mobile 分支代码在[KernelFunction::makeFromUnboxedFunction](nn模块源码.md#src-make-function)
+    - 这部分比较复杂，我们结合代码讲讲：
+        - `AllowLegacyTypes`
+            - 一个不重要的参数，定义把他定义为false
+        - `typename impl::WrapFunctionIntoFunctor<FuncPtr>::type`:
+            - 整个表达式没有创建对象，也没有调用 wrapper
+            - 他把 `FuncPtr` 交给 `WrapFunctionIntoFunctor` 这个模板确定类型，取实例内部名为 type 的类型别名`ConcreteFunctor`
+            - 这里的`typename`：告诉编译器，“这里是一个类型名”
+            - 这个 type 指向带有 `operator()` 的 `WrapFunctionIntoFunctor_` 类
+        - `detail::make_unique_base<OperatorKernel, ConcreteFunctor>()`
+            - `make_unique_base<以什么基类持有, 实际创建什么类>()`
+            - 创建 `ConcreteFunctor` 对象，返回管理它的 `unique_ptr<OperatorKernel>`
+            - 通俗的理解，就是把我们把npu wrapper包装好的对象的指针传出去，调用这个对象，他的operator就会调用npu wrapper
+            - `detail::make_unique_base`位于：[make_unique_base](nn模块源码.md#src-make-unique)
+        - 整体：
+
+            ```cpp
+            makeFromUnboxedFunctor<
+               AllowLegacyTypes,    // 编译期设置
+               ConcreteFunctor     // 编译期确定的具体类类型
+            >(
+               std::move(object)   // 运行时传入创建好的对象，转移所有权
+            );
+            ```
+
+            - 尖括号告诉编译器生成哪个版本；圆括号给这个版本传实际参数。
+    - `WrapFunctionIntoFunctor`
+        - [WrapFunctionIntoFunctor](nn模块源码.md#src-wrap-type)
+        - 给他 `FuncPtr`，他从中取得函数的返回类型、参数类型列表，再把这些信息交给 `WrapFunctionIntoFunctor_`，把得到的类类型命名为 type
+        - [WrapFunctionIntoFunctor_ 的完整偏特化](nn模块源码.md#src-wrap-function) 中，`operator()` 返回 `(*FuncPtr::func_ptr())(std::forward<Parameters>(args)...)`
+            - `FuncPtr::func_ptr()`取得 `&npu_wrapper`
+    - `makeFromUnboxedFunctor`（[完整函数](nn模块源码.md#src-make-functor)）
+        - 模板参数 `KernelFunctor` 指定具体类；函数参数 `kernelFunctor` 是管理该类对象的 `unique_ptr<OperatorKernel>`
+        - 它取得 unboxed 与 boxed 适配函数的地址，把它们与 functor 对象一起装入 `KernelFunction`；完整实现见下方源码引用
+        - 构造函数在[KernelFunction](nn模块源码.md#src-kernel-ctor)
+        - unboxed 入口指向 `wrap_kernel_functor_unboxed_::call`；该静态函数调用具体 functor 的 `operator()`，后者再通过 `FuncPtr::func_ptr()` 调用 wrapper
+- 现在我们就可以说，通过一系列操作，我们把`TORCH_FN(W)`变成了`KernelFunction`放在了`CppFunction::func_`
+
+**`_impl`**
+
+- [Library::_impl](nn模块源码.md#src-library-_impl)
+- `c10::Dispatcher::singleton().registerImpl()`
+    - 这就接到我们上面提到的查找算子，随后注册的的故事了
+    - 他首先通过`findOrRegisterName_`找到`OperatorEntry`
+    - `registerKernel`操作该算子的 `kernels_`，然后更新 `dispatchTable_`
+        - 把 `KernelFunction` 放入 `kernels_` 的注册记录
+            - `kernels_`保存各个 dispatch key 下的注册记录
+            - [OperatorEntry::registerKernel](nn模块源码.md#src-register-kernel)
+            - 取得`kernels_`容器，把新记录放在最前面
+        - 随后`updateDispatchTable_(dispatcher, *dispatch_key);`
+            - [OperatorEntry::updateDispatchTable_](nn模块源码.md#src-update-table)
+            - 它先通过 [getRuntimeDispatchKeySet](nn模块源码.md#src-runtime-keys) 展开受影响的 key，再逐个调用 `updateDispatchTableEntry_`。对于 `PrivateUse1`，先更新自身槽位，再更新 `AutogradPrivateUse1` 槽位；后者是重新选择实现，不是复制同一个 NPU wrapper
+                - 第一步：把 key 映射成数组下标。
+                - 第二步：决定该槽位该用哪个 kernel，然后赋值到dispatchtable。
+                    - 这里涉及了 `computeDispatchTableEntry` 函数；直接注册了 `PrivateUse1` 实现时，使用对应注册记录
+                        - [OperatorEntry::updateDispatchTableEntry_](nn模块源码.md#src-update-entry)
+                        - 它会利用 [getKernelForDispatchKey](nn模块源码.md#src-get-kernel) 取出 `kernels_` 的最新注册记录；完整选择过程见 [computeDispatchTableEntry](nn模块源码.md#src-compute-entry) 与 [computeDispatchTableEntryWithDebug](nn模块源码.md#src-compute-entry-debug)
+                    - 如果涉及fallback，我们暂时不讨论
+
+```text
+构建阶段
+    Python 代码生成器生成 C++：
+        · NPU wrapper 的函数定义
+        · TORCH_LIBRARY_IMPL 注册代码
+
+    C++ 编译、链接：
+        · wrapper 成为编译后的函数代码
+        · 注册初始化函数也成为编译后的函数代码
+        · 生成包含这些代码的库
+
+运行阶段
+    加载相关动态库，执行静态对象初始化：
+        · 构造 registration_object
+        · 构造函数执行 fn(lib_)
+        · 即 register_npu_ops(lib_)
+        · 执行 m.impl(..., TORCH_FN(npu_wrapper))
+        · 把 wrapper 接入 Dispatcher
+
+后续算子调用
+    Dispatcher 选中对应 kernel
+        · 经过之前讨论的适配函数
+        · 真正执行 NPU wrapper
+```
 
 #### 调用链条
 
-Dispatcher 选中实现以后，在 [KernelFunction::call](nn模块源码.md#src-kernel-call)中取得先前保存的函数对象，并把它和当前计算参数交给 `callUnboxedKernelFunction`。
+```text
+① KernelFunction::call
+   将 unboxed_kernel_func_ 转成函数指针并调用
+        ↓
+② unboxed 适配器
+   wrap_kernel_functor_unboxed_::call(...)
+        ↓
+③ 函数对象适配器
+   WrapFunctionIntoFunctor_::operator()(...)
+        │
+        ├── ④ 编译期函数指针封装
+        │      func_ptr() 返回 NPU wrapper 的地址
+        │
+        └── 调用取得的地址
+               ↓
+⑤ NPU wrapper（构建阶段生成）
+   wrapper_NPU__avg_pool2d(...)
+```
 
-进入 [callUnboxedKernelFunction](nn模块源码.md#src-call-unboxed)，它执行保存的 `unboxed_kernel_func_` 入口。注册时，这个入口指向 `wrap_kernel_functor_unboxed_::call`，所以下一步进入[这个适配函数](nn模块源码.md#src-unboxed-adapter)。
 
-适配函数调用注册时创建的函数对象。该对象的 [operator()](nn模块源码.md#src-wrap-function)再取得 `W` 的入口地址，带上当前输入和池化参数调用它，也就进入 `wrapper_NPU__avg_pool2d`。函数对象与指针的语法解释见[附录](nn模块附录.md#cpp-functors)。
 
-这一阶段结束在 wrapper 的入口：输入与池化参数已经从 Dispatcher 传到 torch_npu。下一节从 wrapper 函数体中调用 `op_plugin::avg_pool2d(...)` 的语句继续追。
+<a id="nn-kernel-call"></a>
 
 ### Part5. 从 NPU wrapper 到 CANN 的 ACLNN 算子接口
 
@@ -282,6 +487,8 @@ op_plugin::avg_pool2d(
 这里的参数直接沿用 wrapper 收到的参数；开启 hook 时，用局部变量 `res` 接住返回的 Tensor，供 `PostHook` 使用。wrapper 本身没有分配池化输出，也没有计算平均值。
 
 下一步要看的就是 **`op_plugin` 命名空间下的 `avg_pool2d` 函数体**。
+
+<a id="nn-plugin-selection"></a>
 
 #### op_plugin 如何选择池化实现
 
@@ -454,6 +661,8 @@ cmd.Attr("divisor_override", divisor_override_value).Run();
 ```
 
 到这里，两条实现的下一步就明确了：`op_api` 进入 `EXEC_NPU_CMD(aclnnAvgPool2d, ...)`，`acl_op` 进入 `OpCommand::Run()`，执行它组装的 `AvgPoolV2` 请求。两条路径都使用 NPU 执行接口，`acl_op` 并不表示转到 CPU。
+
+<a id="nn-exec-command"></a>
 
 #### EXEC_NPU_CMD：把池化参数交给 CANN
 
@@ -880,6 +1089,8 @@ auto funcAddr = dlsym(handler, apiName);
 版本也会影响库的组织方式：新版 CANN 文档已改为推荐 `libopapi_nn.so` 等按领域划分的子库，见[算子库文档](https://www.hiascend.com/doc_center/source/zh/CANNCommunityEdition/910beta3/API/aolapi/operatorlist_00001.html)。这里的 `libopapi.so` 对应我们正在阅读的源码和配套运行记录。
 
 到这里，提交方向停在 `acl_call` 中的 `opApiFunc(...)`，即 CANN 的 `aclnnAvgPool2d` 入口。已有材料没有给出这个环境下接口内部到设备 kernel 的逐句调用链。接下来回到 torch_npu：沿池化函数的 `return result`，看输出 Tensor 怎样返回调用者。
+
+<a id="nn-result-return"></a>
 
 #### 请求提交后，result 怎样回到 Python
 
